@@ -77,7 +77,7 @@ The script configures the following:
 - `ssh`, `curl`, `git`, `vim`, `python3`, `valgrind`
 
 ### Compilers
-- `gcc`, `default-jdk` (Debian), `jdk-openjdk` (Arch)
+- `gcc`, `default-jdk` `jdk-openjdk` (Arch)
 
 ### Development Tools
 - `docker`, `virtualenv`, Visual Studio Code, IntelliJ IDEA, PyCharm
