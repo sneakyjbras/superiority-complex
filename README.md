@@ -19,7 +19,6 @@
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
-- [VS Code Add-ons Script](#vs-code-add-ons-script)
 
 ## Introduction
 
@@ -109,46 +108,6 @@ Comment out or remove any tools you don't want to install.
 
 - Ensure your system's package manager is up-to-date before running the script.
 - If an AUR helper is not found, certain packages will be skipped. Install `yay` or `paru` to enable AUR support.
-
-## VS Code Add-ons Script
-
-### New Feature: VS Code Add-ons Installation Script
-
-This repository also includes a Zsh script designed to help you manage and install essential Visual Studio Code add-ons. The script prompts the user for each extension installation, allowing you to selectively install what you need.
-
-#### Installation and Usage
-
-1. **Run the Script:**
-
-   ```bash
-   chmod +x vscode-addons.sh
-   ./vscode-addons.sh
-   ```
-
-2. **Features of the Script**:
-   - Prompts the user before installing each Visual Studio Code extension.
-   - Installs popular extensions for language support, code formatting, Git enhancements, and more.
-   - Customizable list of extensions based on your development needs.
-
-#### Default Extensions Included:
-
-- **Languages & Development Tools**:
-  - `ms-python.python` (Python)
-  - `ms-vscode.cpptools` (C/C++)
-  - `golang.go` (Go)
-  - `rust-lang.rust-analyzer` (Rust)
-- **Code Formatting & Linting**:
-  - `esbenp.prettier-vscode` (Prettier)
-  - `dbaeumer.vscode-eslint` (ESLint)
-- **Collaboration & Git Tools**:
-  - `eamodio.gitlens` (GitLens)
-  - `ms-vsliveshare.vsliveshare` (Live Share)
-- **Productivity Enhancements**:
-  - `visualstudioexptteam.vscodeintellicode` (IntelliCode)
-  - `dracula-theme.theme-dracula` (Dracula Theme)
-  - `github.copilot` (GitHub Copilot - AI-powered code completion)
-  
-... and more! You can edit the included list in the `vscode-addons.sh` file to customize your setup further.
 
 ## Contributing
 
