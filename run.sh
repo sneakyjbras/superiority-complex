@@ -107,10 +107,8 @@ MATTERMOST_PACKAGE="mattermost-desktop"   # AUR
 TEAMS_PACKAGE="teams"                 # AUR
 SPOTIFY_PACKAGE="spotify"             # AUR
 VLC_PACKAGE="vlc"
-# No email client
 ZOOM_PACKAGE="zoom"                   # AUR
 OBSIDIAN_PACKAGE="obsidian"           # AUR
-DRACULA_KONSOLE_URL="https://raw.githubusercontent.com/dracula/konsole/master/Dracula.colorscheme"
 
 # Detect an AUR helper
 if command_exists yay; then
@@ -134,7 +132,6 @@ fi
 CORE_UTILS=(ssh curl git vim python3 valgrind base-devel)
 COMPILERS=(gcc "$JDK_PACKAGE")
 DEV_UTILS=(docker "$VENV_PACKAGE")
-IDEs=()        # No IDEs wanted
 API_TOOLS=(httpie)
 [[ -n "$POSTMAN_PACKAGE" ]] && API_TOOLS+=("$POSTMAN_PACKAGE")
 ENTERTAINMENT=("$SPOTIFY_PACKAGE" "$VLC_PACKAGE")
@@ -217,7 +214,6 @@ INSTALL_CMD_RUN=""
 install_tools "CORE_UTILS" "${CORE_UTILS[@]}"
 install_tools "COMPILERS" "${COMPILERS[@]}"
 install_tools "DEV_UTILS" "${DEV_UTILS[@]}"
-install_tools "IDEs" "${IDEs[@]}"
 install_tools "API_TOOLS" "${API_TOOLS[@]}"
 install_tools "BROWSERS" "${BROWSERS[@]}"
 install_tools "ENTERTAINMENT" "${ENTERTAINMENT[@]}"
