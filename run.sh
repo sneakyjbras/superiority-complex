@@ -7,7 +7,8 @@ set -e
 # Utility functions
 ###############################################################################
 
-# Check if a command exists\ ncommand_exists() {
+# Check if a command exists
+command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
