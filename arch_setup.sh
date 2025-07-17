@@ -1,72 +1,91 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
-# Ensure pacman is available (Arch-based)
-if ! command -v pacman >/dev/null 2>&1; then
-  echo "Unsupported system: pacman not found."
-  exit 1
-fi
+# -----------------------------------------------------------------------------
+# Bootstrap a Manjaro desktop:
+#  • Single pacman upgrade
+#  • Needed‑only installs
+#  • Idempotent zshrc edits (with backups)
+#  • AUR helper auto‑detection
+#  • Non‑interactive SSH‐agent setup (env override)
+#  • Local dotfile & Konsole theme installs
+# -----------------------------------------------------------------------------
+
+# Ensure pacman + sudo exist
+for cmd in pacman sudo; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "ERROR: '$cmd' command not found. Aborting."
+    exit 1
+  fi
+done
 
 CONFIG_FILE="$HOME/.zshrc"
 
-# Detect AUR helper
+# Backup existing zshrc once
+if [[ -f "$CONFIG_FILE" ]]; then
+  cp -n "$CONFIG_FILE" "${CONFIG_FILE}.bak-$(date +%Y%m%d%H%M%S)"
+fi
+
+# Ensure zshrc exists
+touch "$CONFIG_FILE"
+
+# -----------------------------------------------------------------------------
+# Helpers for idempotent appends
+# -----------------------------------------------------------------------------
+append_if_missing() {
+  local line="$1" file="$2"
+  grep -qxF "$line" "$file" || echo "$line" >> "$file"
+}
+
+add_to_config() {
+  local content="$1" desc="$2"
+  if append_if_missing "$content" "$CONFIG_FILE"; then
+    echo "✔ $desc added to $CONFIG_FILE"
+  fi
+}
+
+# -----------------------------------------------------------------------------
+# 1) Apply Manjaro Zsh configs, prompt & plugins
+# -----------------------------------------------------------------------------
+apply_zsh_configs() {
+  echo ">> Applying Manjaro Zsh configuration…"
+  add_to_config 'source /usr/share/zsh/manjaro-zsh-config'    "Manjaro Zsh config"
+  add_to_config 'source /usr/share/zsh/manjaro-zsh-prompt'    "Manjaro Zsh prompt"
+  add_to_config 'source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh'  "Zsh syntax highlighting"
+  add_to_config 'source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh'          "Zsh autosuggestions"
+}
+apply_zsh_configs
+
+# -----------------------------------------------------------------------------
+# 2) SSH‑agent setup (non‑interactive if SSH_KEY_PATH is set)
+# -----------------------------------------------------------------------------
+if ! grep -qF 'ssh-agent -s' "$CONFIG_FILE"; then
+  echo ">> Setting up ssh-agent in your zshrc…"
+  add_to_config 'eval "$(ssh-agent -s)"' "SSH agent init"
+
+  # Determine key path: env override or default
+  SSH_KEY_PATH="${SSH_KEY_PATH:-$HOME/.ssh/id_rsa}"
+  if [[ -f "$SSH_KEY_PATH" ]]; then
+    add_to_config "ssh-add $SSH_KEY_PATH" "SSH key addition"
+  else
+    echo "WARNING: SSH key not found at $SSH_KEY_PATH; skipping ssh-add."
+  fi
+fi
+
+# -----------------------------------------------------------------------------
+# 3) Detect AUR helper (yay or paru)
+# -----------------------------------------------------------------------------
 aur_helper=""
 for helper in yay paru; do
-  if command -v "$helper" >/dev/null 2>&1; then
+  if command -v "$helper" &>/dev/null; then
     aur_helper="$helper"
     break
   fi
 done
 
-# Helper: append line if missing
-append_if_missing() {
-  local line="$1"
-  local file="$2"
-  grep -qxF "$line" "$file" || echo "$line" >> "$file"
-}
-
-# Zsh configuration (common plus Manjaro-specific)
-zsh_configs=(
-  # Colourful aliases
-  "alias ls='ls --color=auto'"
-  "alias grep='grep --color=auto'"
-  "alias egrep='egrep --color=auto'"
-  "alias fgrep='fgrep --color=auto'"
-  "alias tail='tail --color=always'"
-  "alias dmesg='dmesg --color=always'"
-  # Load system dircolors for default bold directories
-  "eval \"\$(dircolors -b /etc/DIR_COLORS)\""
-  # Prompt style
-  "export PS1='%F{green}%n@%m %F{blue}%~%f $ '"
-)
-if [[ -f /etc/manjaro-release ]]; then
-  zsh_configs+=(
-    "source /usr/share/zsh/manjaro-zsh-config"
-    "source /usr/share/zsh/manjaro-zsh-prompt"
-    "source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-    "source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
-  )
-fi
-
-# Apply zsh configs
-for line in "${zsh_configs[@]}"; do
-  append_if_missing "$line" "$CONFIG_FILE"
-done
-
-# SSH agent setup
-if ! grep -qF "ssh-agent -s" "$CONFIG_FILE"; then
-  append_if_missing "eval \"\$(ssh-agent -s)\"" "$CONFIG_FILE"
-  read -rp "Enter SSH key path [~/.ssh/id_rsa]: " ssh_key_path
-  ssh_key_path=${ssh_key_path:-$HOME/.ssh/id_rsa}
-  if [[ -f "$ssh_key_path" ]]; then
-    append_if_missing "ssh-add $ssh_key_path" "$CONFIG_FILE"
-  else
-    echo "WARNING: SSH key not found at $ssh_key_path."
-  fi
-fi
-
-# Package groups
+# -----------------------------------------------------------------------------
+# 4) Package groups
+# -----------------------------------------------------------------------------
 declare -A groups=(
   [core]="ssh curl git vim python3 valgrind base-devel"
   [build]="gcc jdk-openjdk cmake make"
@@ -75,7 +94,7 @@ declare -A groups=(
   [terminal]="tmux htop"
   [search]="screenfetch"
 )
-# AUR-only packages
+
 aur_pkgs=(
   postman-bin
   mattermost-desktop
@@ -83,60 +102,49 @@ aur_pkgs=(
   google-chrome
   obsidian
 )
-if [[ -n "$aur_helper" ]]; then
-  groups[aur]="${aur_pkgs[*]}"
-fi
 
-# Install functions
-default_install() {
-  local pkg="$1" group="$2"
-  if [[ "$group" == "aur" ]]; then
-    $aur_helper -S --noconfirm "$pkg"
-  else
-    sudo pacman -S --noconfirm "$pkg"
-  fi
-}
+# -----------------------------------------------------------------------------
+# 5) System upgrade + installs
+# -----------------------------------------------------------------------------
+echo ">> Updating system & installing packages…"
+sudo pacman -Syu --noconfirm
 
-install_group() {
-  local name="$1"
-  local pkgs=( ${groups[$name]} )
-  local missing=()
-  for pkg in "${pkgs[@]}"; do
-    command -v "${pkg%%=*}" >/dev/null 2>&1 || missing+=("$pkg")
-  done
-  [[ ${#missing[@]} -eq 0 ]] && return
-  echo "Installing [$name]: ${missing[*]}"
-  sudo pacman -Syu --noconfirm
-  for pkg in "${missing[@]}"; do
-    default_install "$pkg" "$name"
-  done
-}
-
-# Run installs
-for grp in core build dev apps terminal search aur; do
-  install_group "$grp"
+# Pacman groups
+for grp in "${!groups[@]}"; do
+  echo "  • [pacman] ${grp}: ${groups[$grp]}"
+  sudo pacman -S --needed --noconfirm ${groups[$grp]}
 done
 
-# Copy local .vimrc
+# AUR packages
+if [[ -n "$aur_helper" ]]; then
+  echo "  • [AUR] Installing via $aur_helper: ${aur_pkgs[*]}"
+  $aur_helper -S --needed --noconfirm "${aur_pkgs[@]}"
+else
+  echo "NOTE: No AUR helper found; skipping AUR packages."
+fi
+
+# -----------------------------------------------------------------------------
+# 6) Copy local .vimrc if present
+# -----------------------------------------------------------------------------
 if [[ -f "./.vimrc" ]]; then
-  echo "Copying .vimrc to $HOME/.vimrc..."
+  echo ">> Copying local .vimrc to $HOME/.vimrc"
   cp -i "./.vimrc" "$HOME/.vimrc"
 fi
 
-# Install Dracula Konsole profile and colorscheme
+# -----------------------------------------------------------------------------
+# 7) Install Dracula Konsole profile & colorscheme
+# -----------------------------------------------------------------------------
 KONSOLE_DIR="$HOME/.local/share/konsole"
 mkdir -p "$KONSOLE_DIR"
+
 for file in dracula.profile dracula.colorscheme; do
   if [[ -f "./$file" ]]; then
-    echo "Installing $file to $KONSOLE_DIR..."
+    echo ">> Installing $file to $KONSOLE_DIR"
     cp -i "./$file" "$KONSOLE_DIR/$file"
   fi
 done
 
-# Source dracula.profile in zshrc if needed
-if ! grep -qF "source $KONSOLE_DIR/dracula.profile" "$CONFIG_FILE"; then
-  append_if_missing "source $KONSOLE_DIR/dracula.profile" "$CONFIG_FILE"
-fi
+add_to_config "source $KONSOLE_DIR/dracula.profile" "Dracula Konsole profile source"
 
 echo "Setup complete."
 
