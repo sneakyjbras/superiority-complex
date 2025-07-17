@@ -1,22 +1,21 @@
 #!/bin/zsh
 
-# Exit immediately if a command exits with a non‑zero status.
+# Exit immediately if a command exits with a non-zero status.
 set -e
 
 ###############################################################################
 # Utility functions
 ###############################################################################
 
-# Check if a command exists
-command_exists() {
+# Check if a command exists\ ncommand_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
 ###############################################################################
-# Ensure we are running on an Arch‑based distribution (pacman must be present)
+# Ensure we are running on an Arch-based distribution (pacman must be present)
 ###############################################################################
 if ! command_exists pacman; then
-    echo "Unsupported system. This setup script is intended for Arch‑based distributions (pacman)."
+    echo "Unsupported system. This setup script is intended for Arch-based distributions (pacman)."
     exit 1
 fi
 
@@ -47,7 +46,7 @@ is_manjaro() {
 # Apply Zsh colours, prompt and plugins
 apply_zsh_configs_prompt() {
     if is_manjaro; then
-        echo "Detected Manjaro system. Applying Manjaro‑specific Zsh configurations..."
+        echo "Detected Manjaro system. Applying Manjaro-specific Zsh configurations..."
         add_to_config 'source /usr/share/zsh/manjaro-zsh-config' "Manjaro Zsh configuration"
         add_to_config 'source /usr/share/zsh/manjaro-zsh-prompt' "Manjaro Zsh prompt"
         add_to_config 'source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' "Zsh Syntax Highlighting Plugin"
@@ -95,41 +94,35 @@ add_ssh_agent() {
 ###############################################################################
 # Package manager configuration for Arch / Manjaro
 ###############################################################################
-PACKAGE_MANAGER=("pacman" "-S" "--noconfirm")
-INSTALL_CMD=("sudo" "pacman" "-Syu" "--noconfirm")
+PACKAGE_MANAGER=(pacman "-S" "--noconfirm")
+INSTALL_CMD=(sudo pacman -Syu --noconfirm)
 
 # Common package names (pacman / AUR where noted)
 VENV_PACKAGE="python-virtualenv"
 JDK_PACKAGE="jdk-openjdk"
 POSTMAN_PACKAGE="postman-bin"          # AUR
-VS_CODE_PACKAGE="visual-studio-code-bin"  # AUR
 CHROME_PACKAGE="google-chrome"        # AUR
 MATTERMOST_PACKAGE="mattermost-desktop"   # AUR
 TEAMS_PACKAGE="teams"                 # AUR
 SPOTIFY_PACKAGE="spotify"             # AUR
-INTELLIJ_PACKAGE="intellij-idea-community-edition"  # AUR
-PYCHARM_PACKAGE="pycharm-community-edition"          # AUR
-EMAIL_CLIENT_PACKAGE="kmail"
+VLC_PACKAGE="vlc"
+# No email client
 ZOOM_PACKAGE="zoom"                   # AUR
 OBSIDIAN_PACKAGE="obsidian"           # AUR
 DRACULA_KONSOLE_URL="https://raw.githubusercontent.com/dracula/konsole/master/Dracula.colorscheme"
 
 # Detect an AUR helper
 if command_exists yay; then
-    AUR_INSTALLER=("yay" "-S" "--noconfirm")
+    AUR_INSTALLER=(yay -S --noconfirm)
 elif command_exists paru; then
-    AUR_INSTALLER=("paru" "-S" "--noconfirm")
+    AUR_INSTALLER=(paru -S --noconfirm)
 else
     echo "No AUR helper found. Please install 'yay' or 'paru' to proceed with AUR packages."
     POSTMAN_PACKAGE=""
-    VS_CODE_PACKAGE=""
-    CHROME_PACKAGE=""
     MATTERMOST_PACKAGE=""
     TEAMS_PACKAGE=""
     SPOTIFY_PACKAGE=""
-    INTELLIJ_PACKAGE=""
-    PYCHARM_PACKAGE=""
-    EMAIL_CLIENT_PACKAGE=""
+    VLC_PACKAGE=""
     ZOOM_PACKAGE=""
     OBSIDIAN_PACKAGE=""
 fi
@@ -139,18 +132,18 @@ fi
 ###############################################################################
 CORE_UTILS=(ssh curl git vim python3 valgrind base-devel)
 COMPILERS=(gcc "$JDK_PACKAGE")
-DEV_UTILS=(docker "$VENV_PACKAGE" "$VS_CODE_PACKAGE")
-IDEs=("$INTELLIJ_PACKAGE" "$PYCHARM_PACKAGE")
+DEV_UTILS=(docker "$VENV_PACKAGE")
+IDEs=()        # No IDEs wanted
 API_TOOLS=(httpie)
 [[ -n "$POSTMAN_PACKAGE" ]] && API_TOOLS+=("$POSTMAN_PACKAGE")
-ENTERTAINMENT=("$SPOTIFY_PACKAGE")
+ENTERTAINMENT=("$SPOTIFY_PACKAGE" "$VLC_PACKAGE")
 EXTRA_APPS=("$MATTERMOST_PACKAGE" "$TEAMS_PACKAGE")
 BUILD_TOOLS=(cmake make)
 TERMINAL_TOOLS=(tmux htop)
 SEARCH_TOOLS=(ripgrep fzf screenfetch)
 BROWSERS=()
 [[ -n "$CHROME_PACKAGE" ]] && BROWSERS+=("$CHROME_PACKAGE")
-EMAIL_CLIENTS=("$EMAIL_CLIENT_PACKAGE")
+EMAIL_CLIENTS=()  # none
 VIDEO_CONFERENCING=("$ZOOM_PACKAGE")
 NOTES_APPS=("$OBSIDIAN_PACKAGE")
 
@@ -166,33 +159,31 @@ install_tools() {
     local installed_var="INSTALLED_${category}"
 
     for t in "${tools[@]}"; do
-        if [[ -z "$t" ]]; then
-            continue
-        fi
+        [[ -z "$t" ]] && continue
         if command_exists "$t"; then
-            eval "$installed_var+=(\\"$t\\")"
+            eval "$installed_var+=(\"$t\")"
         else
             missing+=("$t")
         fi
     done
 
     if [[ ${#missing[@]} -eq 0 ]]; then
-        echo "All ${category,,} are already installed."
+        echo "All $category are already installed."
         return
     fi
 
-    printf "Do you want to install missing ${category,,}? (%s): [Y/n] " "${missing[*]}"
+    printf "Do you want to install missing $category? (%s): [Y/n] " "${missing[*]}"
     read -r answer
     answer=${answer:-Y}
     if [[ "$answer" =~ ^[Yy]$ ]]; then
-        echo "Installing missing ${category,,}: ${missing[*]}..."
+        echo "Installing missing $category: ${missing[*]}..."
         if [[ -z "$INSTALL_CMD_RUN" ]]; then
             "${INSTALL_CMD[@]}" || { echo "Failed to update repositories."; return 1; }
             INSTALL_CMD_RUN=true
         fi
 
         for pkg in "${missing[@]}"; do
-            if [[ -n "${AUR_INSTALLER[*]}" && ( "$pkg" == *-bin || "$pkg" == "$CHROME_PACKAGE" || "$pkg" == "$ZOOM_PACKAGE" || "$pkg" == "$SPOTIFY_PACKAGE" || "$pkg" == "$OBSIDIAN_PACKAGE" || "$pkg" == "$INTELLIJ_PACKAGE" || "$pkg" == "$PYCHARM_PACKAGE" || "$pkg" == "$POSTMAN_PACKAGE" || "$pkg" == "$VS_CODE_PACKAGE" ) ]]; then
+            if [[ -n "${AUR_INSTALLER[*]}" && ( "$pkg" == *-bin || "$pkg" == "$CHROME_PACKAGE" || "$pkg" == "$ZOOM_PACKAGE" || "$pkg" == "$SPOTIFY_PACKAGE" || "$pkg" == "$OBSIDIAN_PACKAGE" || "$pkg" == "$POSTMAN_PACKAGE" || "$pkg" == "$VLC_PACKAGE" ) ]]; then
                 echo "Installing $pkg from AUR..."
                 if ! "${AUR_INSTALLER[@]}" "$pkg"; then
                     echo "Failed to install $pkg from AUR."
@@ -205,7 +196,7 @@ install_tools() {
             fi
         done
     else
-        echo "Skipping installation of missing ${category,,}."
+        echo "Skipping installation of missing $category."
     fi
 }
 
@@ -228,4 +219,14 @@ install_tools "DEV_UTILS" "${DEV_UTILS[@]}"
 install_tools "IDEs" "${IDEs[@]}"
 install_tools "API_TOOLS" "${API_TOOLS[@]}"
 install_tools "BROWSERS" "${BROWSERS[@]}"
-install_tools "ENTERTAINMENT
+install_tools "ENTERTAINMENT" "${ENTERTAINMENT[@]}"
+install_tools "EXTRA_APPS" "${EXTRA_APPS[@]}"
+install_tools "BUILD_TOOLS" "${BUILD_TOOLS[@]}"
+install_tools "TERMINAL_TOOLS" "${TERMINAL_TOOLS[@]}"
+install_tools "SEARCH_TOOLS" "${SEARCH_TOOLS[@]}"
+install_tools "EMAIL_CLIENTS" "${EMAIL_CLIENTS[@]}"
+install_tools "VIDEO_CONFERENCING" "${VIDEO_CONFERENCING[@]}"
+install_tools "NOTES_APPS" "${NOTES_APPS[@]}"
+
+echo "Setup complete."
+
