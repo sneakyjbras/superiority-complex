@@ -18,18 +18,18 @@ This repository contains a **Zsh** setup script tailored for **Arch-based** dist
 2. Make the script executable:
 
    ```bash
-   chmod +x arch_setup.sh
+   chmod +x run.sh
    ```
 3. Run the script:
 
    ```bash
-   ./arch_setup.sh
+   ./run.sh
    ```
 4. Follow any prompts (e.g., package installation confirmation, SSH key path).
 
 ### Customization
 
-* Edit `arch_setup.sh` to add or remove packages in the **package groups** section.
+* Edit `run.sh` to add or remove packages in the **package groups** section.
 * Modify `apply_zsh_configs_prompt()` to adjust aliases, prompt style, or plugins.
 
 ### License
