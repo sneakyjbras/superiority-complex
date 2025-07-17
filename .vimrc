@@ -68,7 +68,7 @@ nnoremap <silent> <C-k> <C-w>k
 nnoremap <silent> <C-l> <C-w>l
 
 " =========================
-" True‑Color & Night Owl
+" True‑Color & Dracula
 " =========================
 
 " 1) Enable 24‑bit (true) color support
@@ -76,15 +76,21 @@ if has('termguicolors')
   set termguicolors
 endif
 
-" 2) Plugin manager (vim‑plug) — only Night Owl
+" 2) Plugin manager (vim‑plug) — only Dracula
 call plug#begin('~/.vim/plugged')
-Plug 'haishanh/night-owl.vim'
+Plug 'dracula/vim'
 call plug#end()
 
-" 3) Load Night Owl by default
-colorscheme night-owl
+" 3) Load Dracula by default
+try
+  colorscheme dracula
+catch /^Vim\%((\a\+)\)\=:E185/
+  echohl WarningMsg
+  echom "Dracula theme not installed – run :PlugInstall"
+  echohl None
+endtry
 
-" 4) Custom command & shortcut to reload Night Owl
-command! NightOwl colorscheme night-owl
-nnoremap <silent> <Leader>no :NightOwl<CR>
+" 4) Custom command & shortcut to reload Dracula
+command! Dracula colorscheme dracula
+nnoremap <silent> <Leader>dr :Dracula<CR>
 
