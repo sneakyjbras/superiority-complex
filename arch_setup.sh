@@ -124,23 +124,24 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 6) Copy local .vimrc if present
+# 6) Copy local .vimrc if present in ./vim/
 # -----------------------------------------------------------------------------
-if [[ -f "./.vimrc" ]]; then
-  echo ">> Copying local .vimrc to $HOME/.vimrc"
-  cp -i "./.vimrc" "$HOME/.vimrc"
+if [[ -f "./vim/.vimrc" ]]; then
+  echo ">> Copying local .vimrc from ./vim to $HOME/.vimrc"
+  cp -i "./vim/.vimrc" "$HOME/.vimrc"
 fi
 
 # -----------------------------------------------------------------------------
-# 7) Install Dracula Konsole profile & colorscheme
+# 7) Install Dracula Konsole profile & colorscheme from ./konsole/
 # -----------------------------------------------------------------------------
 KONSOLE_DIR="$HOME/.local/share/konsole"
 mkdir -p "$KONSOLE_DIR"
 
 for file in dracula.profile dracula.colorscheme; do
-  if [[ -f "./$file" ]]; then
-    echo ">> Installing $file to $KONSOLE_DIR"
-    cp -i "./$file" "$KONSOLE_DIR/$file"
+  src="./konsole/$file"
+  if [[ -f "$src" ]]; then
+    echo ">> Installing $file from ./konsole to $KONSOLE_DIR"
+    cp -i "$src" "$KONSOLE_DIR/$file"
   fi
 done
 
