@@ -4,12 +4,15 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # Bootstrap a Manjaro desktop:
 #  • Single pacman upgrade
-#  • Needed‑only installs
+#  • Needed-only installs
 #  • Idempotent zshrc edits (with backups)
-#  • AUR helper auto‑detection
-#  • Non‑interactive SSH‐agent setup (env override)
-#  • Local dotfile & Konsole theme installs
+#  • AUR helper auto-detection
+#  • Non-interactive SSH-agent setup (env override)
+#  • Local dotfile installs (including Neovim via ./vim/install.sh)
 # -----------------------------------------------------------------------------
+
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="$HOME/.zshrc"
 
 # Ensure pacman + sudo exist
 for cmd in pacman sudo; do
@@ -18,8 +21,6 @@ for cmd in pacman sudo; do
     exit 1
   fi
 done
-
-CONFIG_FILE="$HOME/.zshrc"
 
 # Backup existing zshrc once
 if [[ -f "$CONFIG_FILE" ]]; then
@@ -48,22 +49,21 @@ add_to_config() {
 # 1) Apply Manjaro Zsh configs, prompt & plugins
 # -----------------------------------------------------------------------------
 apply_zsh_configs() {
-  echo ">> Applying Manjaro Zsh configuration…"
-  add_to_config 'source /usr/share/zsh/manjaro-zsh-config'    "Manjaro Zsh config"
-  add_to_config 'source /usr/share/zsh/manjaro-zsh-prompt'    "Manjaro Zsh prompt"
-  add_to_config 'source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh'  "Zsh syntax highlighting"
-  add_to_config 'source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh'          "Zsh autosuggestions"
+  echo ">> Applying Manjaro Zsh configuration..."
+  add_to_config 'source /usr/share/zsh/manjaro-zsh-config' "Manjaro Zsh config"
+  add_to_config 'source /usr/share/zsh/manjaro-zsh-prompt' "Manjaro Zsh prompt"
+  add_to_config 'source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' "Zsh syntax highlighting"
+  add_to_config 'source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh' "Zsh autosuggestions"
 }
 apply_zsh_configs
 
 # -----------------------------------------------------------------------------
-# 2) SSH‑agent setup (non‑interactive if SSH_KEY_PATH is set)
+# 2) SSH-agent setup (non-interactive if SSH_KEY_PATH is set)
 # -----------------------------------------------------------------------------
 if ! grep -qF 'ssh-agent -s' "$CONFIG_FILE"; then
-  echo ">> Setting up ssh-agent in your zshrc…"
+  echo ">> Setting up ssh-agent in your zshrc..."
   add_to_config 'eval "$(ssh-agent -s)"' "SSH agent init"
 
-  # Determine key path: env override or default
   SSH_KEY_PATH="${SSH_KEY_PATH:-$HOME/.ssh/id_rsa}"
   if [[ -f "$SSH_KEY_PATH" ]]; then
     add_to_config "ssh-add $SSH_KEY_PATH" "SSH key addition"
@@ -84,10 +84,11 @@ for helper in yay paru; do
 done
 
 # -----------------------------------------------------------------------------
-# 4) Package groups
+# 4) Package groups (Manjaro/Arch names)
 # -----------------------------------------------------------------------------
 declare -A groups=(
-  [core]="ssh curl git vim python3 valgrind base-devel"
+  # NOTE: openssh provides the `ssh` command; python provides python3
+  [core]="openssh curl git python valgrind base-devel"
   [build]="gcc jdk-openjdk cmake make"
   [dev]="docker python-virtualenv"
   [apps]="vlc"
@@ -106,16 +107,14 @@ aur_pkgs=(
 # -----------------------------------------------------------------------------
 # 5) System upgrade + installs
 # -----------------------------------------------------------------------------
-echo ">> Updating system & installing packages…"
+echo ">> Updating system & installing packages..."
 sudo pacman -Syu --noconfirm
 
-# Pacman groups
 for grp in "${!groups[@]}"; do
   echo "  • [pacman] ${grp}: ${groups[$grp]}"
   sudo pacman -S --needed --noconfirm ${groups[$grp]}
 done
 
-# AUR packages
 if [[ -n "$aur_helper" ]]; then
   echo "  • [AUR] Installing via $aur_helper: ${aur_pkgs[*]}"
   $aur_helper -S --needed --noconfirm "${aur_pkgs[@]}"
@@ -124,30 +123,38 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 6) Copy local .vimrc if present in ./vim/
+# 6) Neovim setup (delegated to ./vim/install.sh)
 # -----------------------------------------------------------------------------
-if [[ -f "./vim/.vimrc" ]]; then
-  echo ">> Copying local .vimrc from ./vim to $HOME/.vimrc"
-  cp -i "./vim/.vimrc" "$HOME/.vimrc"
+NVIM_INSTALLER="$DOTFILES_DIR/vim/install.sh"
+if [[ -f "$NVIM_INSTALLER" ]]; then
+  echo ">> Running Neovim installer: $NVIM_INSTALLER"
+  bash "$NVIM_INSTALLER"
+else
+  echo "WARNING: Neovim installer not found at $NVIM_INSTALLER; skipping."
 fi
 
 # -----------------------------------------------------------------------------
-# 7) Install Dracula Konsole profile & colorscheme from ./konsole/
+# 7) Konsole themes (copy any .profile/.colorscheme you ship)
 # -----------------------------------------------------------------------------
 KONSOLE_DIR="$HOME/.local/share/konsole"
 mkdir -p "$KONSOLE_DIR"
 
-for file in dracula.profile dracula.colorscheme; do
-  src="./konsole/$file"
-  if [[ -f "$src" ]]; then
-    echo ">> Installing $file from ./konsole to $KONSOLE_DIR"
-    cp -i "$src" "$KONSOLE_DIR/$file"
-  fi
-done
+if [[ -d "$DOTFILES_DIR/konsole" ]]; then
+  shopt -s nullglob
+  konsole_files=("$DOTFILES_DIR"/konsole/*.profile "$DOTFILES_DIR"/konsole/*.colorscheme)
+  shopt -u nullglob
 
-add_to_config "source $KONSOLE_DIR/dracula.profile" "Dracula Konsole profile source"
+  if (( ${#konsole_files[@]} )); then
+    echo ">> Installing Konsole profiles/colorschemes to $KONSOLE_DIR"
+    for src in "${konsole_files[@]}"; do
+      cp -i "$src" "$KONSOLE_DIR/$(basename "$src")"
+    done
+  else
+    echo "NOTE: No Konsole .profile/.colorscheme files found in $DOTFILES_DIR/konsole; skipping."
+  fi
+else
+  echo "NOTE: $DOTFILES_DIR/konsole directory not found; skipping Konsole theme install."
+fi
 
 echo "Setup complete."
-
-
 
