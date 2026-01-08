@@ -2,139 +2,165 @@
 set -euo pipefail
 
 # ------------------------------------------------------------
-# Neovim bootstrap for Manjaro/Arch (vim-plug based)
-# - Installs Neovim + useful deps
-# - Ensures Node.js + npm for Copilot (prefers Manjaro LTS if neither is installed)
-# - Installs vim-plug for Neovim
-# - Writes ~/.config/nvim/init.vim (Tokyonight + Copilot)
-# - Creates user-level symlinks so `vim`/`vi` -> `nvim`
+# Neovim bootstrap for Manjaro/Arch (vim-plug + init.lua)
+# Requirements:
+# - Neovim
+# - Node.js + npm (Copilot)
+# - Plugins installed via vim-plug:
+#   - tokyonight.nvim
+#   - github/copilot.vim
+#   - ChatGPT.nvim (+ plenary + nui)
+# - No "dual boot": remove ~/.config/nvim/init.vim
+# - User-level symlinks: vim/vi -> nvim
 # ------------------------------------------------------------
 
-echo "Installing base packages (neovim + tools)..."
-sudo pacman -Syu --noconfirm
+# 1) (Optional) remove Vim packages if present
+if pacman -Qq vim &>/dev/null; then
+  sudo pacman -Rns --noconfirm vim || true
+fi
+if pacman -Qq gvim &>/dev/null; then
+  sudo pacman -Rns --noconfirm gvim || true
+fi
+
+# 2) Base packages (no full upgrade here; your main setup script can do -Syu)
 sudo pacman -S --needed --noconfirm \
   neovim git curl ripgrep fd \
   wl-clipboard xclip
 
-echo "Ensuring Node.js + npm (required for Copilot)..."
-# Manjaro has mutually exclusive node packages: nodejs (current) vs nodejs-lts-iron (LTS).
-# Prefer what's already installed; otherwise install LTS.
+# 3) Ensure Node.js + npm for Copilot (avoid Manjaro nodejs vs nodejs-lts conflicts)
 if pacman -Qq nodejs-lts-iron &>/dev/null; then
-  echo "Found nodejs-lts-iron (LTS)"
   sudo pacman -S --needed --noconfirm npm
 elif pacman -Qq nodejs &>/dev/null; then
-  echo "Found nodejs (current)"
   sudo pacman -S --needed --noconfirm npm
 else
-  echo "Installing nodejs-lts-iron (LTS) + npm"
-  sudo pacman -S --needed --noconfirm nodejs-lts-iron npm
+  if sudo pacman -S --needed --noconfirm nodejs-lts-iron npm; then
+    :
+  else
+    sudo pacman -S --needed --noconfirm nodejs npm
+  fi
 fi
 
-echo "Setting up Neovim config..."
-mkdir -p "$HOME/.config/nvim"
-
-echo "Installing vim-plug for Neovim..."
+# 4) Install vim-plug for Neovim
 curl -fLo "$HOME/.local/share/nvim/site/autoload/plug.vim" --create-dirs \
   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-echo "Writing init.vim (Tokyonight + Copilot)..."
-cat > "$HOME/.config/nvim/init.vim" <<'EOF'
-" =========================
-" Neovim configuration
-" =========================
+# 5) Neovim config dir + remove old init.vim (no dual boot)
+mkdir -p "$HOME/.config/nvim"
+rm -f "$HOME/.config/nvim/init.vim"
 
-syntax enable
+# 6) Write init.lua
+cat > "$HOME/.config/nvim/init.lua" <<'EOF'
+-- =========================
+-- Neovim configuration (Lua)
+-- =========================
 
-set number
-set ruler
-set cursorline
-set showmatch
-set background=dark
+vim.cmd("syntax enable")
 
-set expandtab
-set tabstop=2
-set softtabstop=2
-set shiftwidth=2
-set autoindent
-set smartindent
-filetype plugin indent on
+-- UI
+vim.opt.number = true
+vim.opt.ruler = true
+vim.opt.cursorline = true
+vim.opt.showmatch = true
+vim.opt.background = "dark"
 
-" Persistent undo (Neovim XDG state dir)
-set undofile
-let s:undo_dir = stdpath('state') . '/undo'
-if !isdirectory(s:undo_dir)
-  call mkdir(s:undo_dir, 'p')
-endif
-let &undodir = s:undo_dir
+-- Tabs / indent
+vim.opt.expandtab = true
+vim.opt.tabstop = 2
+vim.opt.softtabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.autoindent = true
+vim.opt.smartindent = true
+vim.cmd("filetype plugin indent on")
 
-set hlsearch
-set incsearch
-set ignorecase
-set smartcase
-set scrolloff=8
-set sidescrolloff=8
+-- Persistent undo (Neovim XDG state dir)
+vim.opt.undofile = true
+local undo_dir = vim.fn.stdpath("state") .. "/undo"
+if vim.fn.isdirectory(undo_dir) == 0 then
+  vim.fn.mkdir(undo_dir, "p")
+end
+vim.opt.undodir = undo_dir
 
-set clipboard=unnamedplus
-set noswapfile
-autocmd FocusLost * silent! wa
+-- Search & navigation
+vim.opt.hlsearch = true
+vim.opt.incsearch = true
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+vim.opt.scrolloff = 8
+vim.opt.sidescrolloff = 8
 
-let mapleader=" "
-nnoremap <silent> <Leader>w :w<CR>
+-- Clipboard / swap / autosave
+vim.opt.clipboard = "unnamedplus"
+vim.opt.swapfile = false
+vim.api.nvim_create_autocmd("FocusLost", {
+  pattern = "*",
+  command = "silent! wa",
+})
 
-nnoremap <silent> <C-h> <C-w>h
-nnoremap <silent> <C-j> <C-w>j
-nnoremap <silent> <C-k> <C-w>k
-nnoremap <silent> <C-l> <C-w>l
+-- Leader
+vim.g.mapleader = " "
 
-if has('termguicolors')
-  set termguicolors
-endif
+-- Keymaps
+local map = vim.keymap.set
+map("n", "<Leader>w", ":w<CR>", { silent = true })
+map("n", "<C-h>", "<C-w>h", { silent = true })
+map("n", "<C-j>", "<C-w>j", { silent = true })
+map("n", "<C-k>", "<C-w>k", { silent = true })
+map("n", "<C-l>", "<C-w>l", { silent = true })
 
-" Tokyonight options: storm | night | moon | day
-let g:tokyonight_style = "night"
-let g:tokyonight_transparent = 0
-let g:tokyonight_terminal_colors = 1
+-- True color
+vim.opt.termguicolors = true
 
-" Plugins (vim-plug)
-call plug#begin(stdpath('data') . '/plugged')
-Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
-Plug 'github/copilot.vim'
-call plug#end()
+-- Tokyonight globals (set before colorscheme)
+vim.g.tokyonight_style = "night"      -- storm | night | moon | day
+vim.g.tokyonight_transparent = 0
+vim.g.tokyonight_terminal_colors = 1
 
-" Theme
-try
-  colorscheme tokyonight
-catch /^Vim\%((\a\+)\)\=:E185/
-  echohl WarningMsg
-  echom "Tokyonight not installed – run :PlugInstall"
-  echohl None
-endtry
+-- =========================
+-- Plugins (vim-plug)
+-- =========================
+local plugged = vim.fn.stdpath("data") .. "/plugged"
+vim.fn["plug#begin"](plugged)
 
-command! Tokyo colorscheme tokyonight
-nnoremap <silent> <Leader>tn :Tokyo<CR>
+vim.cmd([[Plug 'folke/tokyonight.nvim', { 'branch': 'main' }]])
+vim.cmd([[Plug 'github/copilot.vim']])
 
-" Copilot:
-" One-time auth: :Copilot setup
-" Accept suggestions with <Tab> (default behavior when a suggestion is visible).
+-- ChatGPT.nvim + deps
+vim.cmd([[Plug 'nvim-lua/plenary.nvim']])
+vim.cmd([[Plug 'MunifTanjim/nui.nvim']])
+vim.cmd([[Plug 'jackMort/ChatGPT.nvim']])
+
+vim.fn["plug#end"]()
+
+-- Theme
+pcall(vim.cmd, "colorscheme tokyonight")
+vim.api.nvim_create_user_command("Tokyo", function()
+  vim.cmd("colorscheme tokyonight")
+end, {})
+map("n", "<Leader>tn", ":Tokyo<CR>", { silent = true })
+
+-- ChatGPT.nvim (requires OPENAI_API_KEY in your environment)
+pcall(function()
+  require("chatgpt").setup({})
+end)
+
+-- Convenience mappings for ChatGPT.nvim
+map("n", "<Leader>cg", ":ChatGPT<CR>", { silent = true })
+map("v", "<Leader>ce", ":ChatGPTExplain<CR>", { silent = true })
+map("v", "<Leader>cr", ":ChatGPTRefactor<CR>", { silent = true })
 EOF
 
-echo "Creating user-level symlinks (vim/vi -> nvim)..."
+# 7) User-level symlinks (vim/vi -> nvim)
 mkdir -p "$HOME/.local/bin"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vim"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vi"
 
-echo "Ensuring ~/.local/bin is on PATH (zsh + bash)..."
+# 8) Ensure ~/.local/bin is on PATH (zsh + bash), idempotent
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
   [[ -f "$rc" ]] || continue
   grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$rc" || \
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
 done
 
-echo "Installing plugins via vim-plug (headless)..."
+# 9) Install plugins headlessly
 nvim --headless +PlugInstall +qall
-
-echo "Done."
-echo "Neovim config: $HOME/.config/nvim/init.vim"
-echo "Symlinks: $HOME/.local/bin/vim and $HOME/.local/bin/vi -> /usr/bin/nvim"
-echo "Next (one-time): open nvim and run :Copilot setup"
 
