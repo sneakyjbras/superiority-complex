@@ -3,17 +3,16 @@ set -euo pipefail
 
 # ------------------------------------------------------------
 # Neovim bootstrap for Manjaro/Arch (vim-plug + init.lua)
-# Requirements:
 # - Neovim
 # - Node.js + npm (Copilot)
-# - Plugins installed via vim-plug:
+# - Plugins via vim-plug:
 #   - tokyonight.nvim
 #   - github/copilot.vim
-# - No "dual boot": remove ~/.config/nvim/init.vim
+# - No dual boot: remove ~/.config/nvim/init.vim
 # - User-level symlinks: vim/vi -> nvim
 # ------------------------------------------------------------
 
-# 1) (Optional) remove Vim packages if present
+# Optional: remove Vim packages if present
 if pacman -Qq vim &>/dev/null; then
   sudo pacman -Rns --noconfirm vim || true
 fi
@@ -21,12 +20,12 @@ if pacman -Qq gvim &>/dev/null; then
   sudo pacman -Rns --noconfirm gvim || true
 fi
 
-# 2) Base packages (no full upgrade here; your main setup script can do -Syu)
+# Base packages (no full upgrade here; your main setup script can do -Syu)
 sudo pacman -S --needed --noconfirm \
   neovim git curl ripgrep fd \
   wl-clipboard xclip
 
-# 3) Ensure Node.js + npm for Copilot (avoid Manjaro nodejs vs nodejs-lts conflicts)
+# Ensure Node.js + npm for Copilot (avoid Manjaro nodejs vs nodejs-lts conflicts)
 if pacman -Qq nodejs-lts-iron &>/dev/null; then
   sudo pacman -S --needed --noconfirm npm
 elif pacman -Qq nodejs &>/dev/null; then
@@ -39,15 +38,15 @@ else
   fi
 fi
 
-# 4) Install vim-plug for Neovim
+# Install vim-plug for Neovim
 curl -fLo "$HOME/.local/share/nvim/site/autoload/plug.vim" --create-dirs \
   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-# 5) Neovim config dir + remove old init.vim (no dual boot)
+# Neovim config dir + remove old init.vim (no dual boot)
 mkdir -p "$HOME/.config/nvim"
 rm -f "$HOME/.config/nvim/init.vim"
 
-# 6) Write init.lua
+# Write init.lua (Tokyonight + Copilot)
 cat > "$HOME/.config/nvim/init.lua" <<'EOF'
 -- =========================
 -- Neovim configuration (Lua)
@@ -71,7 +70,7 @@ vim.opt.autoindent = true
 vim.opt.smartindent = true
 vim.cmd("filetype plugin indent on")
 
--- Persistent undo (Neovim XDG state dir)
+-- Persistent undo
 vim.opt.undofile = true
 local undo_dir = vim.fn.stdpath("state") .. "/undo"
 if vim.fn.isdirectory(undo_dir) == 0 then
@@ -120,9 +119,17 @@ vim.g.tokyonight_terminal_colors = 1
 local plugged = vim.fn.stdpath("data") .. "/plugged"
 vim.fn["plug#begin"](plugged)
 
-vim.cmd([[Plug 'folke/tokyonight.nvim', { 'branch': 'main' }]])
-vim.cmd([[Plug 'github/copilot.vim']])
-vim.cmd([[Plug 'nvim-telescope/telescope.nvim']])
+vim.cmd([[
+  call plug#begin('~/.local/share/nvim/plugged')
+
+  Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+  Plug 'nvim-lua/plenary.nvim'
+  Plug 'nvim-telescope/telescope.nvim'
+  Plug 'github/copilot.vim'
+
+  call plug#end()
+]])
+
 
 vim.fn["plug#end"]()
 
@@ -132,30 +139,20 @@ vim.api.nvim_create_user_command("Tokyo", function()
   vim.cmd("colorscheme tokyonight")
 end, {})
 map("n", "<Leader>tn", ":Tokyo<CR>", { silent = true })
-
-pcall(function()
-  require("chatgpt").setup({})
-end)
-
--- Convenience mappings for ChatGPT.nvim
-map("n", "<Leader>cg", ":ChatGPT<CR>", { silent = true })
-map("v", "<Leader>ce", ":ChatGPTExplain<CR>", { silent = true })
-map("v", "<Leader>cr", ":ChatGPTRefactor<CR>", { silent = true })
 EOF
 
-# 7) User-level symlinks (vim/vi -> nvim)
+# User-level symlinks (vim/vi -> nvim)
 mkdir -p "$HOME/.local/bin"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vim"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vi"
 
-# 8) Ensure ~/.local/bin is on PATH (zsh + bash), idempotent
+# Ensure ~/.local/bin is on PATH (zsh + bash), idempotent
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
   [[ -f "$rc" ]] || continue
   grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$rc" || \
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
 done
 
-# 9) Install plugins headlessly
+# Install plugins headlessly
 nvim --headless +PlugInstall +qall
-
 
