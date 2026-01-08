@@ -123,6 +123,7 @@ vim.fn["plug#begin"](plugged)
 
 vim.cmd([[Plug 'folke/tokyonight.nvim', { 'branch': 'main' }]])
 vim.cmd([[Plug 'github/copilot.vim']])
+vim.cmd([[Plug 'nvim-telescope/telescope.nvim']])
 
 -- ChatGPT.nvim + deps
 vim.cmd([[Plug 'nvim-lua/plenary.nvim']])
