@@ -149,3 +149,5 @@ add_to_config "source $KONSOLE_DIR/dracula.profile" "Dracula Konsole profile sou
 
 echo "Setup complete."
 
+
+
