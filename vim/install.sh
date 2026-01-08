@@ -9,7 +9,6 @@ set -euo pipefail
 # - Plugins installed via vim-plug:
 #   - tokyonight.nvim
 #   - github/copilot.vim
-#   - ChatGPT.nvim (+ plenary + nui)
 # - No "dual boot": remove ~/.config/nvim/init.vim
 # - User-level symlinks: vim/vi -> nvim
 # ------------------------------------------------------------
@@ -125,11 +124,6 @@ vim.cmd([[Plug 'folke/tokyonight.nvim', { 'branch': 'main' }]])
 vim.cmd([[Plug 'github/copilot.vim']])
 vim.cmd([[Plug 'nvim-telescope/telescope.nvim']])
 
--- ChatGPT.nvim + deps
-vim.cmd([[Plug 'nvim-lua/plenary.nvim']])
-vim.cmd([[Plug 'MunifTanjim/nui.nvim']])
-vim.cmd([[Plug 'jackMort/ChatGPT.nvim']])
-
 vim.fn["plug#end"]()
 
 -- Theme
@@ -139,7 +133,6 @@ vim.api.nvim_create_user_command("Tokyo", function()
 end, {})
 map("n", "<Leader>tn", ":Tokyo<CR>", { silent = true })
 
--- ChatGPT.nvim (requires OPENAI_API_KEY in your environment)
 pcall(function()
   require("chatgpt").setup({})
 end)
@@ -164,4 +157,5 @@ done
 
 # 9) Install plugins headlessly
 nvim --headless +PlugInstall +qall
+
 
