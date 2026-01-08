@@ -2,52 +2,42 @@
 set -euo pipefail
 
 # ------------------------------------------------------------
-# Neovim bootstrap for Manjaro/Arch
-# - (Optional) removes Vim if installed
-# - Installs Neovim + Node.js + npm (required for Copilot)
-# - Installs plugins via native pack/* (git clone):
-#     - github/copilot.vim
-#     - folke/tokyonight.nvim
-# - Writes ~/.config/nvim/init.vim
+# Neovim bootstrap for Manjaro/Arch (vim-plug based)
+# - Installs Neovim + useful deps
+# - Ensures Node.js + npm for Copilot (prefers Manjaro LTS if neither is installed)
+# - Installs vim-plug for Neovim
+# - Writes ~/.config/nvim/init.vim (Tokyonight + Copilot)
 # - Creates user-level symlinks so `vim`/`vi` -> `nvim`
 # ------------------------------------------------------------
 
-# 0) Optional: remove Vim if installed (comment these out if you want to keep Vim)
-if pacman -Qq vim &>/dev/null; then
-  sudo pacman -Rns --noconfirm vim || true
-fi
-if pacman -Qq gvim &>/dev/null; then
-  sudo pacman -Rns --noconfirm gvim || true
-fi
-
-# 1) Install requirements (Copilot needs node + npm)
+echo "Installing base packages (neovim + tools)..."
+sudo pacman -Syu --noconfirm
 sudo pacman -S --needed --noconfirm \
   neovim git curl ripgrep fd \
-  nodejs npm \
   wl-clipboard xclip
 
-# 2) Neovim config dir
+echo "Ensuring Node.js + npm (required for Copilot)..."
+# Manjaro has mutually exclusive node packages: nodejs (current) vs nodejs-lts-iron (LTS).
+# Prefer what's already installed; otherwise install LTS.
+if pacman -Qq nodejs-lts-iron &>/dev/null; then
+  echo "Found nodejs-lts-iron (LTS)"
+  sudo pacman -S --needed --noconfirm npm
+elif pacman -Qq nodejs &>/dev/null; then
+  echo "Found nodejs (current)"
+  sudo pacman -S --needed --noconfirm npm
+else
+  echo "Installing nodejs-lts-iron (LTS) + npm"
+  sudo pacman -S --needed --noconfirm nodejs-lts-iron npm
+fi
+
+echo "Setting up Neovim config..."
 mkdir -p "$HOME/.config/nvim"
 
-# 3) Install Copilot (native pack install, per GitHub instructions)
-COPILOT_DIR="$HOME/.config/nvim/pack/github/start/copilot.vim"
-if [[ -d "$COPILOT_DIR/.git" ]]; then
-  git -C "$COPILOT_DIR" pull --ff-only
-else
-  rm -rf "$COPILOT_DIR"
-  git clone --depth=1 https://github.com/github/copilot.vim.git "$COPILOT_DIR"
-fi
+echo "Installing vim-plug for Neovim..."
+curl -fLo "$HOME/.local/share/nvim/site/autoload/plug.vim" --create-dirs \
+  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
-# 4) Install Tokyonight (native pack install)
-TOKYO_DIR="$HOME/.config/nvim/pack/themes/start/tokyonight.nvim"
-if [[ -d "$TOKYO_DIR/.git" ]]; then
-  git -C "$TOKYO_DIR" pull --ff-only
-else
-  rm -rf "$TOKYO_DIR"
-  git clone --depth=1 https://github.com/folke/tokyonight.nvim.git "$TOKYO_DIR"
-fi
-
-# 5) Write init.vim (Tokyonight + your settings; Copilot loads automatically)
+echo "Writing init.vim (Tokyonight + Copilot)..."
 cat > "$HOME/.config/nvim/init.vim" <<'EOF'
 " =========================
 " Neovim configuration
@@ -69,6 +59,7 @@ set autoindent
 set smartindent
 filetype plugin indent on
 
+" Persistent undo (Neovim XDG state dir)
 set undofile
 let s:undo_dir = stdpath('state') . '/undo'
 if !isdirectory(s:undo_dir)
@@ -104,11 +95,18 @@ let g:tokyonight_style = "night"
 let g:tokyonight_transparent = 0
 let g:tokyonight_terminal_colors = 1
 
+" Plugins (vim-plug)
+call plug#begin(stdpath('data') . '/plugged')
+Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+Plug 'github/copilot.vim'
+call plug#end()
+
+" Theme
 try
   colorscheme tokyonight
 catch /^Vim\%((\a\+)\)\=:E185/
   echohl WarningMsg
-  echom "Tokyonight not installed (pack plugin missing?)"
+  echom "Tokyonight not installed – run :PlugInstall"
   echohl None
 endtry
 
@@ -116,26 +114,27 @@ command! Tokyo colorscheme tokyonight
 nnoremap <silent> <Leader>tn :Tokyo<CR>
 
 " Copilot:
-" - plugin is installed in pack/... so it loads automatically
-" - first-time setup is manual: :Copilot setup
-" - default accept key is <Tab> (Copilot’s default)
+" One-time auth: :Copilot setup
+" Accept suggestions with <Tab> (default behavior when a suggestion is visible).
 EOF
 
-# 6) User-level symlinks (safe: no touching /usr/bin)
+echo "Creating user-level symlinks (vim/vi -> nvim)..."
 mkdir -p "$HOME/.local/bin"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vim"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vi"
 
-# 7) Ensure ~/.local/bin is on PATH (zsh + bash)
+echo "Ensuring ~/.local/bin is on PATH (zsh + bash)..."
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
   [[ -f "$rc" ]] || continue
   grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$rc" || \
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
 done
 
+echo "Installing plugins via vim-plug (headless)..."
+nvim --headless +PlugInstall +qall
+
 echo "Done."
 echo "Neovim config: $HOME/.config/nvim/init.vim"
-echo "Copilot installed at: $COPILOT_DIR"
-echo "Tokyonight installed at: $TOKYO_DIR"
+echo "Symlinks: $HOME/.local/bin/vim and $HOME/.local/bin/vi -> /usr/bin/nvim"
 echo "Next (one-time): open nvim and run :Copilot setup"
 

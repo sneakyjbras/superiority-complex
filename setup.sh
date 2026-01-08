@@ -90,7 +90,7 @@ declare -A groups=(
   [core]="ssh curl git vim python3 valgrind base-devel"
   [build]="gcc jdk-openjdk cmake make"
   [dev]="docker python-virtualenv"
-  [apps]="vlc zoom spotify"
+  [apps]="vlc"
   [terminal]="tmux htop"
   [search]="screenfetch"
 )
