@@ -4,6 +4,7 @@ This repository contains a **Zsh** setup script tailored for **Arch-based** dist
 
 * Zsh configuration (aliases, prompt, syntax highlighting, autosuggestions)
 * SSH agent initialization
+* Terminal AI CLI installation for Claude Code, Codex, and Gemini
 * Installation of common packages via `pacman` and AUR helpers (`yay`/`paru`)
 
 ### Prerequisites
@@ -18,21 +19,20 @@ This repository contains a **Zsh** setup script tailored for **Arch-based** dist
 2. Make the script executable:
 
    ```bash
-   chmod +x run.sh
+   chmod +x setup.sh
    ```
 3. Run the script:
 
    ```bash
-   ./run.sh
+   ./setup.sh
    ```
 4. Follow any prompts (e.g., package installation confirmation, SSH key path).
 
 ### Customization
 
-* Edit `run.sh` to add or remove packages in the **package groups** section.
+* Edit `setup.sh` to add or remove packages in the **package groups** section.
 * Modify `apply_zsh_configs_prompt()` to adjust aliases, prompt style, or plugins.
 
 ### License
 
 This script is provided under the MIT License. Feel free to adapt and redistribute!
-

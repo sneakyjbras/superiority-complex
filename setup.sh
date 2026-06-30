@@ -45,6 +45,14 @@ add_to_config() {
   fi
 }
 
+add_path_to_shells() {
+  local path_line="$1"
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    touch "$rc"
+    grep -qxF "$path_line" "$rc" || echo "$path_line" >> "$rc"
+  done
+}
+
 # -----------------------------------------------------------------------------
 # 1) Apply Manjaro Zsh configs, prompt & plugins
 # -----------------------------------------------------------------------------
@@ -88,7 +96,7 @@ done
 # -----------------------------------------------------------------------------
 declare -A groups=(
   # NOTE: openssh provides the `ssh` command; python provides python3
-  [core]="openssh curl git python valgrind base-devel"
+  [core]="openssh curl git python nodejs npm valgrind base-devel"
   [build]="gcc jdk-openjdk cmake make"
   [dev]="docker python-virtualenv"
   [apps]="vlc"
@@ -123,7 +131,37 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 6) Neovim setup (delegated to ./vim/install.sh)
+# 6) Terminal AI coding CLIs
+# -----------------------------------------------------------------------------
+install_ai_cli_tools() {
+  echo ">> Installing terminal AI coding CLIs..."
+
+  local npm_prefix="$HOME/.local/npm"
+  mkdir -p "$npm_prefix"
+  add_path_to_shells 'export PATH="$HOME/.local/bin:$PATH"'
+  npm config set prefix "$npm_prefix" >/dev/null
+  add_path_to_shells 'export PATH="$HOME/.local/npm/bin:$PATH"'
+  export PATH="$HOME/.local/bin:$HOME/.local/npm/bin:$PATH"
+
+  if command -v claude &>/dev/null; then
+    echo "  • Claude Code already installed."
+  else
+    echo "  • Installing Claude Code native CLI..."
+    curl -fsSL https://claude.ai/install.sh | bash
+  fi
+
+  local ai_cli_pkgs=(
+    @openai/codex
+    @google/gemini-cli
+  )
+
+  echo "  • Installing npm CLIs: ${ai_cli_pkgs[*]}"
+  npm install -g "${ai_cli_pkgs[@]}"
+}
+install_ai_cli_tools
+
+# -----------------------------------------------------------------------------
+# 7) Neovim setup (delegated to ./vim/install.sh)
 # -----------------------------------------------------------------------------
 NVIM_INSTALLER="$DOTFILES_DIR/vim/install.sh"
 if [[ -f "$NVIM_INSTALLER" ]]; then
@@ -134,7 +172,7 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 7) Konsole themes (copy any .profile/.colorscheme you ship)
+# 8) Konsole themes (copy any .profile/.colorscheme you ship)
 # -----------------------------------------------------------------------------
 KONSOLE_DIR="$HOME/.local/share/konsole"
 mkdir -p "$KONSOLE_DIR"
@@ -157,4 +195,3 @@ else
 fi
 
 echo "Setup complete."
-
