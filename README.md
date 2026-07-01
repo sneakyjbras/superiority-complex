@@ -1,38 +1,79 @@
-## Arch/Manjaro Zsh Setup Script
+# Superiority Complex — Manjaro/Arch dotfiles
 
-This repository contains a **Zsh** setup script tailored for **Arch-based** distributions (including Manjaro). It automates:
+A one-command bootstrap for a fresh **Arch-based** (Manjaro) machine. Clone it,
+run one script, and get your packages, Zsh, terminal AI CLIs, Neovim, and Konsole
+themes set up. Every step is **idempotent** (safe to re-run) and **resilient** (a
+single failing step won't abort the whole install — you get a summary at the end).
 
-* Zsh configuration (aliases, prompt, syntax highlighting, autosuggestions)
-* SSH agent initialization
-* Terminal AI CLI installation for Claude Code, Codex, and Gemini
-* Installation of common packages via `pacman` and AUR helpers (`yay`/`paru`)
+## Quick start
 
-### Prerequisites
+```bash
+git clone <this-repo> superiority-complex
+cd superiority-complex
+./install.sh
+```
 
-* An **Arch-based** Linux distribution
-* `zsh` installed
-* AUR helper (`yay` or `paru`) for AUR packages (optional)
+That's it. `./setup.sh` still works too (it just forwards to `install.sh`).
 
-### Usage
+### Running only part of it
 
-1. Clone or download this repository.
-2. Make the script executable:
+```bash
+./install.sh --list        # list available modules
+./install.sh neovim        # run only the Neovim module
+./install.sh 20 30         # run the shell + AI-CLI modules
+```
 
-   ```bash
-   chmod +x setup.sh
-   ```
-3. Run the script:
+## What it does
 
-   ```bash
-   ./setup.sh
-   ```
-4. Follow any prompts (e.g., package installation confirmation, SSH key path).
+| Module | Purpose |
+| ------ | ------- |
+| `modules/10-packages.sh` | `pacman -Syu`, install official-repo package groups, **auto-bootstrap `yay`** if no AUR helper exists, then install AUR apps. |
+| `modules/20-shell.sh` | Manjaro Zsh config/prompt/plugins, `ssh-agent` init, PATH. |
+| `modules/30-ai-cli.sh` | Claude Code (native installer) + npm CLIs (Codex, Gemini) into a user-local npm prefix. |
+| `modules/40-neovim.sh` | Neovim + tooling, vim-plug, **symlinks** `config/nvim/init.lua`, installs plugins headlessly. |
+| `modules/50-konsole.sh` | Installs the shipped Konsole profile/colorscheme. |
 
-### Customization
+## Layout
 
-* Edit `setup.sh` to add or remove packages in the **package groups** section.
-* Modify `apply_zsh_configs_prompt()` to adjust aliases, prompt style, or plugins.
+```
+install.sh            # single entry point / orchestrator
+setup.sh              # back-compat shim -> install.sh
+lib/common.sh         # logging, idempotent helpers, module runner + summary
+config/
+  packages.sh         # EDIT ME: all package lists (pacman groups, AUR, npm, nvim)
+  nvim/init.lua       # EDIT ME: Neovim config (symlinked to ~/.config/nvim)
+modules/*.sh          # one self-contained step each (also runnable standalone)
+konsole/              # Konsole theme assets
+```
 
-### License
+## Customizing
 
-This script is provided under the MIT License. Feel free to adapt and redistribute!
+- **Packages** — edit `config/packages.sh`. It's data only: `PACMAN_GROUPS`,
+  `AUR_PKGS`, `NPM_AI_CLIS`, `NVIM_PKGS`.
+- **Neovim** — edit `config/nvim/init.lua` directly. It's symlinked into
+  `~/.config/nvim`, so changes apply immediately and stay tracked in git.
+- **SSH key** — set `SSH_KEY_PATH` before running to add a non-default key:
+  `SSH_KEY_PATH=~/.ssh/id_ed25519 ./install.sh`.
+
+## Neovim highlights
+
+Plugins (via vim-plug): `tokyonight.nvim`, `telescope.nvim` (+ `plenary.nvim`),
+`copilot.vim`, and `claudecode.nvim` (+ `snacks.nvim`) which drives the Claude Code
+CLI from inside the editor. Leader is `Space`:
+
+| Key | Action |
+| --- | ------ |
+| `<Space>ac` | Toggle Claude |
+| `<Space>af` | Focus Claude |
+| `<Space>as` | Send visual selection to Claude |
+| `<Space>ab` | Add current buffer to Claude |
+| `<Space>tn` | Re-apply Tokyonight theme |
+
+## Prerequisites
+
+An Arch-based distro with `pacman` and `sudo`. An AUR helper is **not** required —
+`yay` is bootstrapped automatically when needed.
+
+## License
+
+MIT — see `LICENSE`.
