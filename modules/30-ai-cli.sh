@@ -3,6 +3,7 @@
 # Terminal AI coding CLIs: Claude Code (native installer) plus npm-based CLIs
 # (Codex, Gemini). npm is configured with a user-local prefix so no sudo/root
 # global installs are needed. List of npm CLIs lives in config/packages.sh.
+# Also links the versioned Claude Code config (config/claude) into ~/.claude.
 # -----------------------------------------------------------------------------
 set -uo pipefail
 
@@ -41,3 +42,25 @@ if has_cmd npm; then
 else
   log_warn "npm not found; skipping npm CLIs: ${NPM_AI_CLIS[*]:-none}"
 fi
+
+# --- Claude Code config ------------------------------------------------------
+# Symlink the versioned Claude Code settings into ~/.claude so this repo stays
+# the single source of truth (edits via /config flow straight back to the repo).
+# Only portable, non-sensitive files are tracked: global settings.json and
+# CLAUDE.md. Machine-local settings.local.json (permission allowlists) is
+# intentionally NOT managed here.
+log_step "Linking Claude Code config"
+claude_src="$DOTFILES_DIR/config/claude"
+claude_dst="$HOME/.claude"
+mkdir -p "$claude_dst"
+for name in settings.json CLAUDE.md; do
+  src="$claude_src/$name"
+  dst="$claude_dst/$name"
+  [[ -f "$src" ]] || { log_warn "Missing $src; skipping."; continue; }
+  # Back up a real (non-symlink) file once, then symlink to the repo.
+  if [[ -e "$dst" && ! -L "$dst" ]]; then
+    cp -n "$dst" "${dst}.bak-$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+  fi
+  ln -sfn "$src" "$dst"
+  log_ok "$name -> $src"
+done

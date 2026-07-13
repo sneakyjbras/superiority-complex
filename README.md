@@ -29,7 +29,7 @@ That's it. `./setup.sh` still works too (it just forwards to `install.sh`).
 | ------ | ------- |
 | `modules/10-packages.sh` | `pacman -Syu`, install official-repo package groups, **auto-bootstrap `yay`** if no AUR helper exists, then install AUR apps. |
 | `modules/20-shell.sh` | Manjaro Zsh config/prompt/plugins, `ssh-agent` init, PATH. |
-| `modules/30-ai-cli.sh` | Claude Code (native installer) + npm CLIs (Codex, Gemini) into a user-local npm prefix. |
+| `modules/30-ai-cli.sh` | Claude Code (native installer) + npm CLIs (Codex, Gemini) into a user-local npm prefix; **symlinks** `config/claude/{settings.json,CLAUDE.md}` into `~/.claude`. |
 | `modules/40-neovim.sh` | Neovim + tooling, vim-plug, **symlinks** `config/nvim/init.lua`, installs plugins headlessly. |
 | `modules/50-konsole.sh` | Installs the shipped Konsole profile/colorscheme. |
 
