@@ -10,7 +10,7 @@
 declare -gA PACMAN_GROUPS=(
   [core]="openssh curl git python nodejs npm valgrind base-devel"
   [build]="gcc jdk-openjdk cmake make"
-  [dev]="docker python-virtualenv"
+  [dev]="docker python-virtualenv python-pipx"
   [apps]="vlc"
   [terminal]="tmux htop"
   [search]="screenfetch"
@@ -33,7 +33,14 @@ declare -ga NPM_AI_CLIS=(
   @google/gemini-cli
 )
 
+# Terminal AI coding CLIs installed via pipx (isolated Python venvs).
+# Installed by modules/30-ai-cli.sh.
+declare -ga PIPX_AI_CLIS=(
+  aider-chat
+)
+
 # Extra packages Neovim needs (installed by modules/40-neovim.sh).
+# make + gcc: compile treesitter parsers and run the avante.nvim `make` build.
 declare -ga NVIM_PKGS=(
-  neovim git curl ripgrep fd wl-clipboard xclip
+  neovim git curl ripgrep fd wl-clipboard xclip make gcc
 )

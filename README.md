@@ -29,8 +29,8 @@ That's it. `./setup.sh` still works too (it just forwards to `install.sh`).
 | ------ | ------- |
 | `modules/10-packages.sh` | `pacman -Syu`, install official-repo package groups, **auto-bootstrap `yay`** if no AUR helper exists, then install AUR apps. |
 | `modules/20-shell.sh` | Manjaro Zsh config/prompt/plugins, `ssh-agent` init, PATH. |
-| `modules/30-ai-cli.sh` | Claude Code (native installer) + npm CLIs (Codex, Gemini) into a user-local npm prefix; **symlinks** `config/claude/{settings.json,CLAUDE.md}` into `~/.claude`. |
-| `modules/40-neovim.sh` | Neovim + tooling, vim-plug, **symlinks** `config/nvim/init.lua`, installs plugins headlessly. |
+| `modules/30-ai-cli.sh` | Claude Code (native installer) + npm CLIs (Codex, Gemini) + pipx CLIs (Aider); **symlinks** `config/claude/{settings.json,CLAUDE.md}` into `~/.claude`. |
+| `modules/40-neovim.sh` | Neovim + tooling, **symlinks** `config/nvim/init.lua`, syncs plugins headlessly (**lazy.nvim** self-bootstraps). |
 | `modules/50-konsole.sh` | Installs the shipped Konsole profile/colorscheme. |
 
 ## Layout
@@ -57,16 +57,31 @@ konsole/              # Konsole theme assets
 
 ## Neovim highlights
 
-Plugins (via vim-plug): `tokyonight.nvim`, `telescope.nvim` (+ `plenary.nvim`),
-`copilot.vim`, and `claudecode.nvim` (+ `snacks.nvim`) which drives the Claude Code
-CLI from inside the editor. Leader is `Space`:
+Plugins (via **lazy.nvim**, self-bootstrapping): `tokyonight.nvim`,
+`telescope.nvim` (+ `plenary.nvim`), `nvim-treesitter`, `copilot.vim`, plus three
+AI assistants:
+
+- **`claudecode.nvim`** (+ `snacks.nvim`) — drives the Claude Code CLI in-editor.
+- **`codecompanion.nvim`** — chat/inline AI with Claude, Gemini and Codex
+  (OpenAI) adapters.
+- **`avante.nvim`** — Cursor-style AI panel (`provider = claude`; switch with
+  `:AvanteSwitchProvider gemini|openai`).
+
+API keys are read from the environment: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`,
+`OPENAI_API_KEY`. Leader is `Space`:
 
 | Key | Action |
 | --- | ------ |
-| `<Space>ac` | Toggle Claude |
-| `<Space>af` | Focus Claude |
-| `<Space>as` | Send visual selection to Claude |
-| `<Space>ab` | Add current buffer to Claude |
+| `<Space>cc` | Toggle Claude Code |
+| `<Space>cf` | Focus Claude Code |
+| `<Space>cr` | Resume Claude Code |
+| `<Space>cs` | Send visual selection to Claude Code |
+| `<Space>cb` | Add current buffer to Claude Code |
+| `<Space>ia` | CodeCompanion actions |
+| `<Space>ic` | Toggle CodeCompanion chat |
+| `<Space>ip` | CodeCompanion inline prompt |
+| `<Space>aa` | Avante: ask (and other `<Space>a*` Avante defaults) |
+| `<Space>ff` / `<Space>fg` | Telescope find files / live grep |
 | `<Space>tn` | Re-apply Tokyonight theme |
 
 ## Prerequisites

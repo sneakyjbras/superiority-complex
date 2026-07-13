@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Neovim setup (vim-plug + Lua config):
-#   • Install neovim and its tooling deps.
+# Neovim setup (lazy.nvim + Lua config):
+#   • Install neovim and its tooling deps (incl. a C toolchain for treesitter
+#     parsers and the avante.nvim `make` build).
 #   • Ensure Node.js + npm (Copilot / claudecode.nvim).
 #   • Symlink config/nvim/init.lua -> ~/.config/nvim/init.lua (single source of truth).
 #   • Symlink vim/vi -> nvim.
-#   • Install plugins headlessly.
+#   • Sync plugins headlessly (lazy.nvim self-bootstraps from init.lua).
 # -----------------------------------------------------------------------------
 set -uo pipefail
 
@@ -36,13 +37,8 @@ else
     || log_warn "Node.js/npm install failed."
 fi
 
-# --- 3) vim-plug -------------------------------------------------------------
-log_step "Installing vim-plug"
-curl -fLo "$HOME/.local/share/nvim/site/autoload/plug.vim" --create-dirs \
-  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim \
-  || log_warn "Failed to download vim-plug."
-
-# --- 4) Symlink the config ---------------------------------------------------
+# --- 3) Symlink the config ---------------------------------------------------
+# (lazy.nvim self-bootstraps from init.lua on first launch — no vim-plug.)
 log_step "Linking Neovim config"
 mkdir -p "$HOME/.config/nvim"
 src="$DOTFILES_DIR/config/nvim/init.lua"
@@ -58,18 +54,20 @@ fi
 ln -sfn "$src" "$dst"
 log_ok "init.lua -> $src"
 
-# --- 5) vim/vi -> nvim -------------------------------------------------------
+# --- 4) vim/vi -> nvim -------------------------------------------------------
 mkdir -p "$HOME/.local/bin"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vim"
 ln -sf /usr/bin/nvim "$HOME/.local/bin/vi"
 add_path_to_shells 'export PATH="$HOME/.local/bin:$PATH"'
 
-# --- 6) Install plugins headlessly -------------------------------------------
+# --- 5) Sync plugins headlessly ----------------------------------------------
+# lazy.nvim clones itself from init.lua, then installs/builds every plugin
+# (incl. the avante.nvim `make` step and treesitter parsers).
 if has_cmd nvim; then
-  log_step "Installing Neovim plugins (headless)"
-  nvim --headless +PlugInstall +qall 2>/dev/null \
-    || log_warn "PlugInstall reported issues."
-  log_ok "Plugins installed"
+  log_step "Syncing Neovim plugins (headless, lazy.nvim)"
+  nvim --headless "+Lazy! sync" +qa 2>/dev/null \
+    || log_warn "lazy.nvim sync reported issues."
+  log_ok "Plugins synced"
 else
-  log_warn "nvim not found; skipping plugin install."
+  log_warn "nvim not found; skipping plugin sync."
 fi

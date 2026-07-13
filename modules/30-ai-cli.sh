@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Terminal AI coding CLIs: Claude Code (native installer) plus npm-based CLIs
-# (Codex, Gemini). npm is configured with a user-local prefix so no sudo/root
-# global installs are needed. List of npm CLIs lives in config/packages.sh.
+# Terminal AI coding CLIs: Claude Code (native installer), npm-based CLIs
+# (Codex, Gemini) and pipx-based CLIs (Aider). npm uses a user-local prefix and
+# pipx uses isolated venvs, so no sudo/root global installs are needed. The CLI
+# lists live in config/packages.sh.
 # Also links the versioned Claude Code config (config/claude) into ~/.claude.
 # -----------------------------------------------------------------------------
 set -uo pipefail
@@ -41,6 +42,23 @@ if has_cmd npm; then
   fi
 else
   log_warn "npm not found; skipping npm CLIs: ${NPM_AI_CLIS[*]:-none}"
+fi
+
+# --- pipx-based CLIs (Aider) -------------------------------------------------
+# Aider is a Python tool; pipx installs it into its own isolated venv so it
+# never collides with system/site packages. List lives in config/packages.sh.
+if has_cmd pipx; then
+  pipx ensurepath >/dev/null 2>&1 || true
+  for pkg in "${PIPX_AI_CLIS[@]}"; do
+    if pipx list --short 2>/dev/null | grep -q "^${pkg} "; then
+      log_ok "$pkg already installed (pipx)."
+    else
+      log_info "Installing $pkg via pipx..."
+      pipx install "$pkg" || log_warn "pipx install $pkg failed."
+    fi
+  done
+else
+  log_warn "pipx not found; skipping pipx CLIs: ${PIPX_AI_CLIS[*]:-none}"
 fi
 
 # --- Claude Code config ------------------------------------------------------
