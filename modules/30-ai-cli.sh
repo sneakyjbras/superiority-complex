@@ -1,29 +1,24 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Terminal AI coding CLIs: Claude Code (native installer), npm-based CLIs
-# (Codex, Gemini) and pipx-based CLIs (Aider). npm uses a user-local prefix and
-# pipx uses isolated venvs, so no sudo/root global installs are needed. The CLI
-# lists live in config/packages.sh.
+# Terminal AI coding CLIs. Two are kept, both standalone self-updating binaries
+# living under ~/.local/bin (no npm globals, no pipx venvs, no sudo):
+#   • Claude Code  — installed via its native installer.
+#   • Antigravity  — Google's `agy` CLI; updates itself via `agy update`.
 # Also links the versioned Claude Code config (config/claude) into ~/.claude.
 # -----------------------------------------------------------------------------
 set -uo pipefail
 
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 source "$DOTFILES_DIR/lib/common.sh"
-source "$DOTFILES_DIR/config/packages.sh"
 
 log_step "Installing terminal AI coding CLIs"
 
-# User-local npm prefix + PATH (avoids root-owned global installs).
-npm_prefix="$HOME/.local/npm"
-mkdir -p "$npm_prefix"
 add_path_to_shells 'export PATH="$HOME/.local/bin:$PATH"'
-add_path_to_shells 'export PATH="$HOME/.local/npm/bin:$PATH"'
-export PATH="$HOME/.local/bin:$HOME/.local/npm/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # --- Claude Code (native CLI) ------------------------------------------------
 if has_cmd claude; then
-  log_ok "Claude Code already installed."
+  log_ok "Claude Code already installed ($(claude --version 2>/dev/null || echo present))."
 else
   log_info "Installing Claude Code native CLI..."
   if curl -fsSL https://claude.ai/install.sh | bash; then
@@ -33,32 +28,18 @@ else
   fi
 fi
 
-# --- npm-based CLIs ----------------------------------------------------------
-if has_cmd npm; then
-  npm config set prefix "$npm_prefix" >/dev/null 2>&1 || true
-  if [[ ${#NPM_AI_CLIS[@]} -gt 0 ]]; then
-    log_info "Installing npm CLIs: ${NPM_AI_CLIS[*]}"
-    npm install -g "${NPM_AI_CLIS[@]}" || log_warn "Some npm CLIs failed to install."
-  fi
+# --- Antigravity CLI (agy) ---------------------------------------------------
+# Google's terminal agent, and the one Gemini CLI we keep. It has no unattended
+# installer we can pin, but it self-updates, so bring an existing install
+# up to date and otherwise point at the docs rather than guessing a URL.
+if has_cmd agy; then
+  log_info "Updating Antigravity CLI ($(agy --version 2>/dev/null || echo unknown))..."
+  agy update && log_ok "Antigravity CLI up to date." \
+    || log_warn "\`agy update\` reported errors."
 else
-  log_warn "npm not found; skipping npm CLIs: ${NPM_AI_CLIS[*]:-none}"
-fi
-
-# --- pipx-based CLIs (Aider) -------------------------------------------------
-# Aider is a Python tool; pipx installs it into its own isolated venv so it
-# never collides with system/site packages. List lives in config/packages.sh.
-if has_cmd pipx; then
-  pipx ensurepath >/dev/null 2>&1 || true
-  for pkg in "${PIPX_AI_CLIS[@]}"; do
-    if pipx list --short 2>/dev/null | grep -q "^${pkg} "; then
-      log_ok "$pkg already installed (pipx)."
-    else
-      log_info "Installing $pkg via pipx..."
-      pipx install "$pkg" || log_warn "pipx install $pkg failed."
-    fi
-  done
-else
-  log_warn "pipx not found; skipping pipx CLIs: ${PIPX_AI_CLIS[*]:-none}"
+  log_warn "Antigravity CLI (agy) not found — install it from"
+  log_warn "  https://antigravity.google/docs/cli/reference"
+  log_warn "then re-run this module to keep it updated."
 fi
 
 # --- Claude Code config ------------------------------------------------------

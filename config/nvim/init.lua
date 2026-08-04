@@ -112,18 +112,29 @@ require("lazy").setup({
     },
   },
 
-  -- Treesitter (required by codecompanion + avante) -------------------------
+  -- Treesitter (syntax highlighting + indentation) --------------------------
+  -- Pinned to the `main` branch and written against its API: the old
+  -- `nvim-treesitter.configs` module (ensure_installed/highlight/indent) no
+  -- longer exists. Parsers are installed explicitly, and highlighting is
+  -- started per-buffer by Neovim itself for any filetype that has a parser.
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "main",
+    lazy = false,
     build = ":TSUpdate",
     config = function()
-      require("nvim-treesitter.configs").setup({
-        ensure_installed = {
-          "lua", "vim", "vimdoc", "bash", "python",
-          "c", "cpp", "markdown", "markdown_inline",
-        },
-        highlight = { enable = true },
-        indent = { enable = true },
+      require("nvim-treesitter").setup()
+      require("nvim-treesitter").install({
+        "lua", "vim", "vimdoc", "bash", "python",
+        "c", "cpp", "markdown", "markdown_inline",
+      })
+      vim.api.nvim_create_autocmd("FileType", {
+        callback = function(ev)
+          local lang = vim.treesitter.language.get_lang(vim.bo[ev.buf].filetype)
+          if lang and pcall(vim.treesitter.start, ev.buf, lang) then
+            vim.bo[ev.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end
+        end,
       })
     end,
   },
@@ -147,79 +158,6 @@ require("lazy").setup({
       { "<leader>cr", "<cmd>ClaudeCode --resume<cr>", desc = "Resume Claude" },
       { "<leader>cs", "<cmd>ClaudeCodeSend<cr>",    mode = "v", desc = "Send selection to Claude" },
       { "<leader>cb", "<cmd>ClaudeCodeAdd %<cr>",   desc = "Add current buffer to Claude" },
-    },
-  },
-
-  -- CodeCompanion (in-editor chat/inline AI) --------------------------------
-  -- Adapters for Claude (anthropic), Gemini and Codex (openai). API keys are
-  -- read from the environment: ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY.
-  -- Prefix: <leader>i  ("AI")
-  {
-    "olimorris/codecompanion.nvim",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-treesitter/nvim-treesitter",
-    },
-    cmd = { "CodeCompanion", "CodeCompanionChat", "CodeCompanionActions" },
-    keys = {
-      { "<leader>i",  nil,                                mode = { "n", "v" }, desc = "CodeCompanion (AI)" },
-      { "<leader>ia", "<cmd>CodeCompanionActions<cr>",    mode = { "n", "v" }, desc = "AI actions" },
-      { "<leader>ic", "<cmd>CodeCompanionChat Toggle<cr>", mode = { "n", "v" }, desc = "Toggle AI chat" },
-      { "<leader>ip", "<cmd>CodeCompanion<cr>",           mode = { "n", "v" }, desc = "AI inline prompt" },
-    },
-    opts = {
-      adapters = {
-        http = {
-          anthropic = function()
-            return require("codecompanion.adapters").extend("anthropic", {
-              env = { api_key = "ANTHROPIC_API_KEY" },
-            })
-          end,
-          gemini = function()
-            return require("codecompanion.adapters").extend("gemini", {
-              env = { api_key = "GEMINI_API_KEY" },
-            })
-          end,
-          openai = function()
-            return require("codecompanion.adapters").extend("openai", {
-              env = { api_key = "OPENAI_API_KEY" },
-            })
-          end,
-        },
-      },
-      strategies = {
-        chat   = { adapter = "anthropic" },
-        inline = { adapter = "anthropic" },
-        cmd    = { adapter = "anthropic" },
-      },
-    },
-  },
-
-  -- Avante (Cursor-style AI panel) ------------------------------------------
-  -- provider = "claude"; switch at runtime with :AvanteSwitchProvider gemini|openai.
-  -- Keys: <leader>a* (avante defaults). Reads ANTHROPIC/GEMINI/OPENAI API keys from env.
-  {
-    "yetone/avante.nvim",
-    build = "make",
-    event = "VeryLazy",
-    version = false,
-    opts = {
-      provider = "claude",
-      providers = {
-        claude = { endpoint = "https://api.anthropic.com" },
-        gemini = { endpoint = "https://generativelanguage.googleapis.com/v1beta/openai/" },
-        openai = { endpoint = "https://api.openai.com/v1" },
-      },
-    },
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "MunifTanjim/nui.nvim",
-      "nvim-tree/nvim-web-devicons",
-      {
-        "MeanderingProgrammer/render-markdown.nvim",
-        opts = { file_types = { "markdown", "Avante" } },
-        ft = { "markdown", "Avante" },
-      },
     },
   },
 })

@@ -10,7 +10,7 @@
 declare -gA PACMAN_GROUPS=(
   [core]="openssh curl git python nodejs npm valgrind base-devel"
   [build]="gcc jdk-openjdk cmake make"
-  [dev]="docker python-virtualenv python-pipx"
+  [dev]="docker python-virtualenv"
   [apps]="vlc"
   [terminal]="tmux htop"
   [search]="screenfetch"
@@ -26,21 +26,35 @@ declare -ga AUR_PKGS=(
   obsidian
 )
 
-# Terminal AI coding CLIs installed via npm (global). Claude Code is installed
-# separately via its native installer in modules/30-ai-cli.sh.
-declare -ga NPM_AI_CLIS=(
-  @openai/codex
-  @google/gemini-cli
-)
-
-# Terminal AI coding CLIs installed via pipx (isolated Python venvs).
-# Installed by modules/30-ai-cli.sh.
-declare -ga PIPX_AI_CLIS=(
-  aider-chat
-)
+# Terminal AI coding CLIs. Deliberately just two:
+#   • Claude Code  — native installer, self-updating.
+#   • Antigravity  — Google's CLI (`agy`), self-updating via `agy update`.
+# Both ship as standalone binaries under ~/.local/bin, so there is no npm/pipx
+# package list here. modules/30-ai-cli.sh drives them.
+#
+# Removed on purpose (do not re-add without a reason): @openai/codex,
+# @google/gemini-cli (superseded by Antigravity), aider-chat, opencode.
 
 # Extra packages Neovim needs (installed by modules/40-neovim.sh).
-# make + gcc: compile treesitter parsers and run the avante.nvim `make` build.
+# tree-sitter-cli: REQUIRED by nvim-treesitter's `main` branch, which shells out
+#   to the `tree-sitter` binary to generate parsers (the `tree-sitter` package
+#   alone is only the library and does NOT provide that binary).
+# make + gcc: compile the generated parsers.
 declare -ga NVIM_PKGS=(
-  neovim git curl ripgrep fd wl-clipboard xclip make gcc
+  neovim git curl ripgrep fd wl-clipboard xclip make gcc tree-sitter-cli
+)
+
+# i3 window manager + the desktop pieces Plasma used to provide (installed by
+# modules/60-i3.sh). i3 is X11-only, hence the xorg entries.
+#   rofi        launcher / window switcher      picom    compositor
+#   dunst       notifications                   feh      wallpaper
+#   i3lock      screen locker                   xss-lock lock on idle/suspend
+#   maim+xclip  screenshots to clipboard        nm-applet/pavucontrol  tray
+#   lxappearance  GTK theming without Plasma's settings app
+declare -ga I3_PKGS=(
+  i3-wm i3status i3lock
+  rofi picom dunst feh xss-lock maim
+  xorg-server xorg-xinit xorg-xrandr xorg-xsetroot
+  network-manager-applet pavucontrol lxappearance
+  otf-font-awesome
 )

@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # Neovim setup (lazy.nvim + Lua config):
 #   • Install neovim and its tooling deps (incl. a C toolchain for treesitter
-#     parsers and the avante.nvim `make` build).
+#     parsers).
 #   • Ensure Node.js + npm (Copilot / claudecode.nvim).
 #   • Symlink config/nvim/init.lua -> ~/.config/nvim/init.lua (single source of truth).
 #   • Symlink vim/vi -> nvim.
@@ -62,7 +62,7 @@ add_path_to_shells 'export PATH="$HOME/.local/bin:$PATH"'
 
 # --- 5) Sync plugins headlessly ----------------------------------------------
 # lazy.nvim clones itself from init.lua, then installs/builds every plugin
-# (incl. the avante.nvim `make` step and treesitter parsers).
+# (incl. treesitter parsers) and removes any plugin no longer listed.
 if has_cmd nvim; then
   log_step "Syncing Neovim plugins (headless, lazy.nvim)"
   nvim --headless "+Lazy! sync" +qa 2>/dev/null \

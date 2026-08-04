@@ -76,7 +76,7 @@ do not grind through it serially in the main thread.
 
 # Per-project overrides
 
-## conway-simulation  (/home/jbras/conway-simulation)
+## hpc-conway-simulation  (/home/jbras/hpc-conway-simulation)
 
 - **Git commit attribution:** Author **all** commits — including **merge
   commits** — as **sneakyjbras** (`j.eduardo.bras@outlook.com`), already set in
@@ -96,15 +96,16 @@ do not grind through it serially in the main thread.
 
 - **Pre-commit workflow (mandatory, every code change):**
   1. Run the formatter and linter and make them clean before committing:
-     `scripts/run-clang-format.sh` (apply, not just `--check`) and
-     `scripts/run-clang-tidy.sh`. Code must be properly formatted and
+     `scripts/run-precommit-checks.sh` runs both in order (clang-format applies
+     in-place, then clang-tidy). The individual scripts —
+     `scripts/run-clang-format.sh` and `scripts/run-clang-tidy.sh` — can be run
+     directly when you only need one. Code must be properly formatted and
      lint-clean. Keep these enforced in `.github/workflows` CI.
   2. Run the correctness tests (`./test.sh` and/or `ctest`) — multiple times —
      and confirm they pass.
   3. **Performance is a hard gate:** never commit or merge a change that
-     degrades timings. Benchmark the change **multiple times** (via
-     `scripts/benchgate.sh`, which runs Monte-Carlo timing and compares against
-     the baseline) and only merge when performance is **equal or better**. A
+     degrades timings. Benchmark the change **multiple times** (`./test.sh
+     --bench`) and only merge when performance is **equal or better**. A
      regression is rejected, not merged — speed never regresses.
 
 - **Supervising multi-agent work here:** select model/effort per task (barrier

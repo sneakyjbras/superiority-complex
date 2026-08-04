@@ -4,5 +4,5 @@
     "clangd-lsp@claude-plugins-official": true
   },
   "effortLevel": "xhigh",
-  "theme": "dark"
+  "theme": "auto"
 }
