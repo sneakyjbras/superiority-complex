@@ -6,6 +6,33 @@ themes and an **i3** desktop set up. Every step is **idempotent** (safe to
 re-run) and **resilient** (a single failing step won't abort the whole install —
 you get a summary at the end).
 
+## The stack
+
+The whole point is that there isn't much of it. One window manager, one
+terminal, one editor, two AI CLIs:
+
+| Layer | What | Notes |
+| ----- | ---- | ----- |
+| **Desktop** | **i3** (default) | Tiling, keyboard-driven, X11. `config/i3/config`. |
+| | **KDE Plasma** (fallback) | Left installed on purpose — pick it at the SDDM login screen if i3 misbehaves. |
+| | SDDM | Login screen; pre-selects i3 via AccountsService. |
+| **Terminal** | **Konsole** + **Zsh** | KDE's terminal, kept even under i3. Manjaro zsh config + syntax highlighting + autosuggestions. |
+| **Editor / IDE** | **Neovim** | The *only* editor. No VS Code, no Cursor — see below. |
+| **AI** | **Claude Code** (`claude`) | Terminal agent; config tracked in `config/claude/`. |
+| | **Antigravity** (`agy`) | Google's terminal agent; self-updates. |
+| | **`copilot.vim`** | Inline completion inside Neovim. |
+
+### No IDE, on purpose
+
+**VS Code and Cursor are deliberately not installed.** Neovim plus the AI CLIs
+covers the same ground without a 3 GB Electron app per editor, and the config
+here is a single ~160-line `init.lua` that lives in git rather than a settings
+blob that drifts per machine. Nothing in this repo installs either one, and
+neither should be re-added without a reason.
+
+Copilot is kept **in Neovim only** (`copilot.vim`), authenticated through
+`~/.config/github-copilot`.
+
 ## Quick start
 
 ```bash

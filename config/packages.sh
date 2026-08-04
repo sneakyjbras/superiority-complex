@@ -34,6 +34,10 @@ declare -ga AUR_PKGS=(
 #
 # Removed on purpose (do not re-add without a reason): @openai/codex,
 # @google/gemini-cli (superseded by Antigravity), aider-chat, opencode.
+#
+# NOT INSTALLED, also on purpose: visual-studio-code-bin and cursor-bin.
+# Neovim is the editor; see "No IDE, on purpose" in the README. GitHub Copilot
+# is kept in Neovim only (copilot.vim), not as an IDE extension.
 
 # Extra packages Neovim needs (installed by modules/40-neovim.sh).
 # tree-sitter-cli: REQUIRED by nvim-treesitter's `main` branch, which shells out
