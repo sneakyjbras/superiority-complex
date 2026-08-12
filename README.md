@@ -2,21 +2,21 @@
 
 A one-command bootstrap for a fresh **Arch-based** (Manjaro) machine. Clone it,
 run one script, and get your packages, Zsh, terminal AI CLIs, Neovim, Konsole
-themes and an **i3** desktop set up. Every step is **idempotent** (safe to
+themes set up on top of the stock KDE Plasma desktop. Every step is
+**idempotent** (safe to
 re-run) and **resilient** (a single failing step won't abort the whole install —
 you get a summary at the end).
 
 ## The stack
 
-The whole point is that there isn't much of it. One window manager, one
-terminal, one editor, two AI CLIs:
+The whole point is that there isn't much of it. The desktop is whatever KDE
+ships; one terminal, one editor, two AI CLIs:
 
 | Layer | What | Notes |
 | ----- | ---- | ----- |
-| **Desktop** | **i3** (default) | Tiling, keyboard-driven, X11. `config/i3/config`. |
-| | **KDE Plasma** (fallback) | Left installed on purpose — pick it at the SDDM login screen if i3 misbehaves. |
-| | SDDM | Login screen; pre-selects i3 via AccountsService. |
-| **Terminal** | **Konsole** + **Zsh** | KDE's terminal, kept even under i3. Manjaro zsh config + syntax highlighting + autosuggestions. |
+| **Desktop** | **KDE Plasma** (stock) | Manjaro's own Plasma/KWin. Nothing here configures or replaces it — see below. |
+| | SDDM | Login screen, as shipped. |
+| **Terminal** | **Konsole** + **Zsh** | KDE's terminal. Manjaro zsh config + syntax highlighting + autosuggestions. |
 | **Editor / IDE** | **Neovim** | The *only* editor. No VS Code, no Cursor — see below. |
 | **AI** | **Claude Code** (`claude`) | Terminal agent; config tracked in `config/claude/`. |
 | | **Antigravity** (`agy`) | Google's terminal agent; self-updates. |
@@ -60,7 +60,8 @@ That's it. `./setup.sh` still works too (it just forwards to `install.sh`).
 | `modules/30-ai-cli.sh` | Claude Code (native installer) + Antigravity (`agy`, self-updating); **symlinks** `config/claude/{settings.json,CLAUDE.md}` into `~/.claude`. |
 | `modules/40-neovim.sh` | Neovim + tooling, **symlinks** `config/nvim/init.lua`, syncs plugins headlessly (**lazy.nvim** self-bootstraps). |
 | `modules/50-konsole.sh` | Installs the shipped Konsole profile/colorscheme. |
-| `modules/60-i3.sh` | i3 + launcher/compositor/notifications/lock, **symlinks** `config/i3/config` and `config/i3status/config`, and makes i3 the default SDDM session. |
+
+Nothing touches the desktop session — there is no window-manager module.
 
 ## Layout
 
@@ -69,11 +70,9 @@ install.sh            # single entry point / orchestrator
 setup.sh              # back-compat shim -> install.sh
 lib/common.sh         # logging, idempotent helpers, module runner + summary
 config/
-  packages.sh         # EDIT ME: all package lists (pacman groups, AUR, nvim, i3)
+  packages.sh         # EDIT ME: all package lists (pacman groups, AUR, nvim)
   nvim/init.lua       # EDIT ME: Neovim config (symlinked to ~/.config/nvim)
   claude/             # Claude Code settings.json + CLAUDE.md (symlinked to ~/.claude)
-  i3/config           # EDIT ME: i3 config (symlinked to ~/.config/i3)
-  i3status/config     # i3 status line
 modules/*.sh          # one self-contained step each (also runnable standalone)
 konsole/              # Konsole theme assets
 ```
@@ -81,10 +80,10 @@ konsole/              # Konsole theme assets
 ## Customizing
 
 - **Packages** — edit `config/packages.sh`. It's data only: `PACMAN_GROUPS`,
-  `AUR_PKGS`, `NVIM_PKGS`, `I3_PKGS`.
+  `AUR_PKGS`, `NVIM_PKGS`.
 - **Neovim** — edit `config/nvim/init.lua` directly. It's symlinked into
   `~/.config/nvim`, so changes apply immediately and stay tracked in git.
-- **i3** — edit `config/i3/config`; reload in place with `$mod+Shift+r`.
+- **Desktop** — use KDE's own System Settings; it isn't managed from here.
 - **SSH key** — set `SSH_KEY_PATH` before running to add a non-default key:
   `SSH_KEY_PATH=~/.ssh/id_ed25519 ./install.sh`.
 
@@ -120,28 +119,13 @@ in-editor. Leader is `Space`:
 `tree-sitter-cli` package to build parsers — the old
 `require("nvim-treesitter.configs")` API no longer exists.
 
-## i3 desktop
+## Desktop: stock KDE, on purpose
 
-`modules/60-i3.sh` installs i3 and makes it the session SDDM pre-selects.
-**Plasma stays installed** — pick it at the login screen to fall back. Note that
-i3 is X11-only, so this moves the session off Wayland.
-
-Modifier is **Super** (`$mod`). Highlights:
-
-| Key | Action |
-| --- | ------ |
-| `$mod+Return` | Konsole |
-| `$mod+d` / `$mod+Tab` | rofi launcher / window switcher |
-| `$mod+q` | Close window |
-| `$mod+h/j/k/l` | Focus (add `Shift` to move) |
-| `$mod+b` / `$mod+v` | Split horizontal / vertical |
-| `$mod+f` | Fullscreen |
-| `$mod+1..0` | Workspace (add `Shift` to move window there) |
-| `$mod+r` | Resize mode |
-| `Print` / `$mod+Print` | Screenshot screen / region → clipboard |
-| `$mod+Shift+x` | Lock |
-| `$mod+Shift+r` / `$mod+Shift+c` | Restart / reload i3 |
-| `$mod+Shift+e` | Exit i3 |
+Window management is KWin's job. Plasma already ships the launcher, compositor,
+notifications, screen locker, tray and screenshots, so there is nothing here to
+bolt on — no module installs a window manager or changes the SDDM session.
+Tiling, shortcuts and panels are configured in KDE System Settings (Plasma has
+its own tiling via `Meta+T` and custom KWin shortcuts).
 
 ## Prerequisites
 

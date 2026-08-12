@@ -48,17 +48,7 @@ declare -ga NVIM_PKGS=(
   neovim git curl ripgrep fd wl-clipboard xclip make gcc tree-sitter-cli
 )
 
-# i3 window manager + the desktop pieces Plasma used to provide (installed by
-# modules/60-i3.sh). i3 is X11-only, hence the xorg entries.
-#   rofi        launcher / window switcher      picom    compositor
-#   dunst       notifications                   feh      wallpaper
-#   i3lock      screen locker                   xss-lock lock on idle/suspend
-#   maim+xclip  screenshots to clipboard        nm-applet/pavucontrol  tray
-#   lxappearance  GTK theming without Plasma's settings app
-declare -ga I3_PKGS=(
-  i3-wm i3status i3lock
-  rofi picom dunst feh xss-lock maim
-  xorg-server xorg-xinit xorg-xrandr xorg-xsetroot
-  network-manager-applet pavucontrol lxappearance
-  otf-font-awesome
-)
+# NO WINDOW MANAGER PACKAGES, on purpose. The desktop is stock KDE Plasma as
+# shipped by Manjaro — KWin does the window management, and the launcher,
+# compositor, notifications, locker, tray and screenshots all come with it.
+# Do not add a separate window manager without a reason.
