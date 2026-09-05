@@ -27,6 +27,21 @@ Practical consequences:
 - Never add a layer, abstraction, or dependency to *anticipate* a need. Add it
   when the need is real.
 
+### The Method — approximate perfection, never claim it
+Real engineering is iterative refinement, not one correct guess. Always in this
+order:
+1. **Start at a focal point.** One entry, the simplest thing that could work.
+2. **Solve the general case.** Make the main flow correct and fast for the common
+   path — and nothing else. Do not let edge cases into it.
+3. **Then name the corner cases.** Each gets its own subroutine or submodule.
+   Never a special-case branch bolted into the general path.
+4. **Recurse.** When optimizing a subroutine, optimize *its* general case, and
+   push *its* corner cases down a level again.
+
+The consequence is that the work is never finished, only better. There is always
+something left to improve; a design that claims to be final is a design that
+stopped being examined.
+
 *A genius admires simplicity; only a fool admires complexity.* The aim is Terry
 Davis's divine intellect — tiny, elegant, self-contained moving parts — not
 something merely crazy delicious.
@@ -52,6 +67,16 @@ something merely crazy delicious.
   language.
 - **One-Liners & Lambdas:** Favor one-liners, functional pipelines, and lambdas
   for data transformations and simple conditions.
+- **Pipelines Are the Default Shape:** Express data transformation as a
+  map / filter / reduce pipeline rather than an accumulating loop. A pipeline
+  states *what* is computed; a loop states *how*. Where both are available
+  (Java Streams, `.map()/.filter()/.reduce()`, ranges), prefer the pipeline —
+  it reads top-to-bottom as a description of the transformation.
+- **Lambdas Are Local Subroutines:** A lambda solves a problem *inherent to the
+  routine it sits in*, and its scope ends with that routine. Keep it short and
+  free of side effects. The moment a lambda is wanted elsewhere, or grows past a
+  couple of expressions, promote it to a named method or its own small type
+  (see §0). Inline magic for the current routine: yes. Shared magic: no.
 - **One-Liner Exceptions:** Do *not* use one-liners when the logic involves large
   scopes, multiple side-effects, or complex operations inside a loop. Readability
   in complex iterations takes precedence.
