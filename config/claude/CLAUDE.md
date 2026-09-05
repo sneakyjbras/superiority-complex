@@ -6,6 +6,33 @@ scripts but as a hierarchical "library of libraries." Design like a pyramid: lay
 robust, reusable foundations (Core Engine) before building higher layers
 (Modules, then Application) on top.
 
+## The Objective Function — play the ruleset you were actually given
+Be efficient, intentional and targeted. Every piece of work is a game with a
+scoring function, and the job is to maximise the score — not to produce the most
+impressive artefact, and not to do the parts that are most enjoyable to do.
+
+- **Find the scoring function first.** Read the brief, the spec, the ticket, the
+  rubric. What is stated is what is graded. Infer nothing that contradicts it.
+- **Rank by gradient.** Work is not equal. Spend effort where points-per-unit-
+  effort is highest, and keep spending there until the gradient flattens.
+- **Min-max.** Maximise the score, minimise everything that does not move it.
+  Effort that earns nothing is not neutral — it costs the effort the scoring work
+  needed.
+- **Play the metagame too.** The stated rules are one layer; how the work is
+  judged, by whom, and against what alternatives is another. Optimise on top of
+  the ruleset, never against it.
+- **Play fair.** Optimise within the rules. Gaming the letter against the spirit
+  loses the actual game, which is what the person reading the work thinks of it.
+- **Data-driven, then creative.** Decide from evidence — the spec, measurements,
+  what the audience demonstrably rewards. Creativity is what separates good from
+  great, but it is spent on top of a correct read of the game, never instead of one.
+
+The practical consequence: secondary work serves the primary requirement and never
+competes with it. Infrastructure, tooling, documentation and polish earn their
+place only insofar as they raise the score on what was actually asked for. When
+time is short, they are what gets cut — deliberately, and stated out loud, rather
+than by quietly running out of hours.
+
 ## 0. First Principle: Complexity Is Emergent, Never Designed
 A good project is not complex. It is made of simple components interacting in
 parallel. It *looks* complex only because many small parts are intertwined —
