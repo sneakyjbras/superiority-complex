@@ -6,6 +6,31 @@ scripts but as a hierarchical "library of libraries." Design like a pyramid: lay
 robust, reusable foundations (Core Engine) before building higher layers
 (Modules, then Application) on top.
 
+## 0. First Principle: Complexity Is Emergent, Never Designed
+A good project is not complex. It is made of simple components interacting in
+parallel. It *looks* complex only because many small parts are intertwined —
+but no single part is complex. Complexity that shows up inside a component is a
+defect; complexity that emerges between simple components is the goal.
+
+Every component must be:
+- **Self-contained** — it never reaches into another component's internals.
+- **Single** — one job, explainable in one sentence. If it needs two, split it.
+- **Minimal** — the smallest thing that does the job, with nothing spare.
+- **Ephemeral** — cheap to construct, cheap to discard, holding no hidden state.
+- **Performant** — simple and fast are the same choice, not a tradeoff.
+
+Practical consequences:
+- Prefer many small units over few large ones, always.
+- A component that cannot be tested alone is too big. Split it before writing it.
+- When a clever solution and a simple composable one both work, the simple one is
+  correct. Reject cleverness that buys nothing.
+- Never add a layer, abstraction, or dependency to *anticipate* a need. Add it
+  when the need is real.
+
+*A genius admires simplicity; only a fool admires complexity.* The aim is Terry
+Davis's divine intellect — tiny, elegant, self-contained moving parts — not
+something merely crazy delicious.
+
 ## 1. Architectural Philosophy (The Pyramid)
 - **Hierarchical Design:** Structure code as modules calling modules. Core /
   foundational layers must have no dependencies on higher layers.
